@@ -17,26 +17,26 @@ interface LockedCameraPreset {
 }
 
 /**
- * Curated dead-steady static tripod vantage points for every mainline spell (TH06 - TH20).
- * Used in `locked` mode so an entire 15-game Medley plays & records cleanly with zero camera movement
+ * Curated 3/4 oblique elevated wide-diorama tripod vantage points for every mainline spell (TH06 - TH20).
+ * Reveals each spell's full 3D volumetric depth & structural silhouette like a floating holographic sculpture
  * on BOTH 16:9 landscape AND 9:16 vertical portrait!
  */
 export const LOCKED_CAMERA_PRESETS: Record<string, LockedCameraPreset> = {
-  TH06: { position: [0.0, 0.8, 25.5], lookAt: [0.0, 0.0, -2.5], fov: 50, portraitPullback: 1.32, portraitFov: 64 },
-  TH07: { position: [0.0, 1.4, 27.5], lookAt: [0.0, 0.4, -3.5], fov: 50, portraitPullback: 1.42, portraitFov: 66 },
-  TH08: { position: [0.0, 7.5, 29.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.34, portraitFov: 64 },
-  TH09: { position: [0.0, 5.2, 23.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.38, portraitFov: 64 },
-  TH10: { position: [0.0, -2.6, 18.2], lookAt: [0.0, 4.2, -22.0], fov: 50, portraitPullback: 1.24, portraitFov: 65 },
-  TH11: { position: [0.0, 3.6, 23.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.32, portraitFov: 64 },
-  TH12: { position: [4.6, -1.5, 16.5], lookAt: [0.0, 0.0, -28.0], fov: 54, portraitPullback: 1.12, portraitFov: 68 },
-  TH13: { position: [0.0, 1.6, 25.5], lookAt: [0.0, 1.2, -5.2], fov: 50, portraitPullback: 1.3, portraitFov: 66 },
-  TH14: { position: [0.0, 2.2, 23.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.32, portraitFov: 64 },
-  TH15: { position: [0.0, 3.8, 25.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.34, portraitFov: 64 },
-  TH16: { position: [0.0, 1.4, 25.5], lookAt: [0.0, 0.0, -3.5], fov: 52, portraitPullback: 1.38, portraitFov: 66 },
-  TH17: { position: [0.0, 3.5, 24.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.34, portraitFov: 64 },
-  TH18: { position: [0.0, 0.5, 24.5], lookAt: [0.0, 0.0, -5.2], fov: 50, portraitPullback: 1.3, portraitFov: 65 },
-  TH19: { position: [0.0, 8.2, 25.5], lookAt: [0.0, 0.0, 0.0], fov: 48, portraitPullback: 1.34, portraitFov: 64 },
-  TH20: { position: [0.0, 5.2, 24.5], lookAt: [0.0, 0.0, 0.0], fov: 50, portraitPullback: 1.34, portraitFov: 64 },
+  TH06: { position: [36.5, 7.5, 45.0], lookAt: [-1.4, -1.2, -4.5], fov: 48, portraitPullback: 1.24, portraitFov: 58 },
+  TH07: { position: [25.5, 8.0, 36.0], lookAt: [-0.8, -0.8, -3.8], fov: 48, portraitPullback: 1.32, portraitFov: 60 },
+  TH08: { position: [29.5, 15.2, 39.5], lookAt: [0.0, -0.8, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
+  TH09: { position: [22.0, 13.5, 29.0], lookAt: [0.0, -0.4, 0.0], fov: 48, portraitPullback: 1.32, portraitFov: 60 },
+  TH10: { position: [20.5, -1.0, 28.5], lookAt: [-0.8, 2.8, -18.0], fov: 50, portraitPullback: 1.24, portraitFov: 62 },
+  TH11: { position: [23.0, 9.0, 31.0], lookAt: [0.0, -0.8, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
+  TH12: { position: [24.0, 6.8, 32.0], lookAt: [-2.4, -1.0, -24.0], fov: 52, portraitPullback: 1.26, portraitFov: 64 },
+  TH13: { position: [24.5, 8.2, 31.5], lookAt: [-0.6, 0.0, -5.2], fov: 50, portraitPullback: 1.28, portraitFov: 62 },
+  TH14: { position: [23.5, 7.6, 31.0], lookAt: [0.0, -0.8, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
+  TH15: { position: [24.5, 10.5, 33.5], lookAt: [0.0, -0.8, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
+  TH16: { position: [23.5, 7.0, 33.5], lookAt: [-0.6, -0.8, -4.2], fov: 50, portraitPullback: 1.32, portraitFov: 62 },
+  TH17: { position: [26.5, 11.2, 34.5], lookAt: [0.0, -0.5, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
+  TH18: { position: [23.5, 7.5, 34.5], lookAt: [-0.6, -0.8, -4.2], fov: 48, portraitPullback: 1.36, portraitFov: 60 },
+  TH19: { position: [24.5, 13.8, 32.5], lookAt: [0.0, -0.8, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
+  TH20: { position: [24.5, 11.6, 31.5], lookAt: [0.0, -0.8, 0.0], fov: 48, portraitPullback: 1.28, portraitFov: 60 },
 };
 
 export class CameraDirector {

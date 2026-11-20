@@ -13,6 +13,9 @@ public/audio/clips/
 public/audio/master_mix.mp3
 public/audio/master_mix.wav
 
+# Rendered videos & previews
+outputs/
+
 # OS & editor junk
 .DS_Store
 Thumbs.db

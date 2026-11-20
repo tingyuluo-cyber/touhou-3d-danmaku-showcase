@@ -36,6 +36,7 @@ export class DanmakuEngine implements RecorderHost {
   private currentFps = 60;
   private isExportSizing = false;
   private aspectMode: AspectMode = 'landscape';
+  private forceMedleyFade = false;
 
   private readonly cameraPose: CameraPose = {
     position: new THREE.Vector3(0, 2, 22),
@@ -187,6 +188,10 @@ export class DanmakuEngine implements RecorderHost {
     return this.cameraDirector.mode;
   }
 
+  public setForceMedleyFade(enabled: boolean): void {
+    this.forceMedleyFade = enabled;
+  }
+
   public getAspectMode(): AspectMode {
     return this.aspectMode;
   }
@@ -277,10 +282,11 @@ export class DanmakuEngine implements RecorderHost {
     this.postFX.waveDistort = 0;
     this.postFX.flash = 0;
 
-    // Gentle global cinematic fade-in (1.2s) and lingering fade-out (1.5s) across every spell card
+    // Gentle global cinematic fade-in (1.25s) and lingering fade-out (1.55s) across every spell card
     const dur = this.currentSpell.duration;
     const isOverlapHandoff =
-      this.audio.isMedleyMasterActive() && this.currentSpell.metadata.gameCode !== 'TH20';
+      (this.forceMedleyFade || this.audio.isMedleyMasterActive()) &&
+      this.currentSpell.metadata.gameCode !== 'TH20';
     const fadeEnd = isOverlapHandoff ? Math.max(2.0, dur - 0.85) : dur;
     const fadeIn = smootherstep(0.0, 1.25, time);
     const fadeOut = 1.0 - smootherstep(Math.max(1.25, fadeEnd - 1.55), fadeEnd, time);

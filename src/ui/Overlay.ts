@@ -629,6 +629,44 @@ export class DirectorOverlay {
     this.captionTitleWrapEl.style.clipPath = titleClip;
   }
 
+  public syncCaptionAtExactTime(
+    time: number,
+    duration: number,
+    isOverlapHandoff: boolean,
+  ): void {
+    if (!this.captionVisible) {
+      this.captionEl.style.opacity = '0';
+      return;
+    }
+    const code = this.engine.getCurrentSpell()?.metadata.gameCode ?? 'TH06';
+    const fadeEnd = isOverlapHandoff ? Math.max(2.0, duration - 0.85) : duration;
+    const cIn =
+      code === 'TH15'
+        ? Math.max(0, Math.min(1, (time - 0.45) / 0.85))
+        : smootherstep(0.45, 1.48, time);
+    const cOut =
+      1.0 -
+      smootherstep(
+        Math.max(1.5, fadeEnd - 1.55),
+        Math.max(1.6, fadeEnd - 0.3),
+        time,
+      );
+    this.captionEl.style.opacity = (cIn * cOut).toFixed(3);
+    this.updateCaptionPresentation(code, time, cIn, cOut);
+  }
+
+  public enterOfflineRenderMode(aspectMode: 'landscape' | 'portrait'): void {
+    cancelAnimationFrame(this.uiRafId);
+    this.uiRafId = 0;
+    this.hudVisible = false;
+    this.captionVisible = true;
+    this.appEl.classList.add('render-mode', 'pure-cinema');
+    this.appEl.classList.toggle('portrait-mode', aspectMode === 'portrait');
+    this.hudEl.classList.add('hidden');
+    this.restoreHintEl.classList.add('hidden');
+    this.captionEl.classList.remove('hidden', 'hud-open', 'is-swapping');
+  }
+
   public dispose(): void {
     cancelAnimationFrame(this.uiRafId);
   }

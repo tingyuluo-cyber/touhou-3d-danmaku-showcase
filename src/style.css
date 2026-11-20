@@ -41,6 +41,7 @@ body,
    9:16 Vertical Portrait Stage Mode (Douyin / Bilibili Vertical / Shorts)
    ============================================================================ */
 #app.portrait-mode {
+  --pw: min(100vw, calc(100vh * 9 / 16));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,7 +49,7 @@ body,
 }
 
 #app.portrait-mode #stage-canvas {
-  width: min(100vw, calc(100vh * 9 / 16));
+  width: var(--pw);
   height: 100vh;
   box-shadow: 0 0 0 1px rgba(132, 198, 255, 0.2), 0 0 42px rgba(0, 0, 0, 0.9);
 }
@@ -57,11 +58,26 @@ body,
   box-shadow: none;
 }
 
+/* Headless Offline Cinema Render Mode (100% full-bleed canvas, ZERO UI/hints!) */
+#app.render-mode #director-hud,
+#app.render-mode #hud-restore-hint {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+#app.render-mode #stage-canvas {
+  width: 100vw !important;
+  height: 100vh !important;
+  box-shadow: none !important;
+}
+
 #app.portrait-mode .cinema-caption {
   bottom: 11vh;
   min-width: 0;
   padding: 6px 14px 4px;
-  max-width: min(calc(100vh * 9 / 16 - 24px), 92vw);
+  max-width: calc(var(--pw) * 0.94);
+  gap: calc(var(--pw) * 0.006);
 }
 
 #app.portrait-mode .cinema-caption.hud-open {
@@ -69,32 +85,71 @@ body,
 }
 
 #app.portrait-mode .caption-meta {
-  font-size: 10px;
+  font-size: calc(var(--pw) * 0.0175);
   letter-spacing: 0.18em;
 }
 
 #app.portrait-mode .caption-ornament {
-  font-size: 9px;
+  font-size: calc(var(--pw) * 0.0155);
 }
 
 #app.portrait-mode .caption-rule {
-  width: min(230px, calc(100vh * 9 / 16 - 64px));
-  gap: 8px;
-  margin: 3px 0 4px;
+  width: calc(var(--pw) * 0.56);
+  gap: calc(var(--pw) * 0.016);
+  margin: calc(var(--pw) * 0.006) 0 calc(var(--pw) * 0.009);
+}
+
+#app.portrait-mode .rule-emblem {
+  font-size: calc(var(--pw) * 0.019);
 }
 
 #app.portrait-mode .caption-title {
-  font-size: clamp(17px, 2.55vh, 27px) !important;
+  font-size: calc(var(--pw) * 0.044) !important;
   letter-spacing: 0.12em;
 }
 
 #app.portrait-mode .caption-sub {
-  font-size: 9.5px;
+  font-size: calc(var(--pw) * 0.0165);
   letter-spacing: 0.14em;
 }
 
 #app.portrait-mode .cinema-caption[data-game='TH14'] .caption-sub {
-  margin-top: 18px;
+  margin-top: calc(var(--pw) * 0.036);
+}
+
+/* Crisp 1080p full-scale caption proportion during landscape offline render */
+#app.render-mode:not(.portrait-mode) .cinema-caption {
+  bottom: 42px;
+  gap: 5px;
+}
+
+#app.render-mode:not(.portrait-mode) .caption-meta {
+  font-size: 16px;
+}
+
+#app.render-mode:not(.portrait-mode) .caption-ornament {
+  font-size: 14px;
+}
+
+#app.render-mode:not(.portrait-mode) .caption-rule {
+  width: 460px;
+  margin: 6px 0 8px;
+}
+
+#app.render-mode:not(.portrait-mode) .rule-emblem {
+  font-size: 15px;
+}
+
+#app.render-mode:not(.portrait-mode) .caption-title {
+  font-size: 46px !important;
+}
+
+#app.render-mode:not(.portrait-mode) .caption-sub {
+  font-size: 15px;
+}
+
+#app.render-mode:not(.portrait-mode) .cinema-caption[data-game='TH14'] .caption-sub {
+  margin-top: 34px;
 }
 
 /* ============================================================================
