@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { smoothstep } from '../prototypes/DanmakuMath';
 import type { CameraPose } from '../spells/types';
 
 export type CameraMode = 'cinema' | 'locked' | 'free';
@@ -144,8 +145,9 @@ export class CameraDirector {
       const pullback = 1.0 + portraitT * 0.28;
       this.rayOffset.subVectors(pose.position, pose.lookAt);
       const dist = this.rayOffset.length();
-      // Gently preserve close tunnel intimacy (e.g. TH12) while pulling open-stage orbits cleanly back
-      const effectivePull = dist > 16 ? pullback : 1.0 + (pullback - 1.0) * 0.55;
+      // Smooth C1 ramp preserves close tunnel intimacy while eliminating any zoom-jump when dist crosses 16!
+      const distBlend = smoothstep(10.0, 22.0, dist);
+      const effectivePull = 1.0 + (pullback - 1.0) * (0.55 + 0.45 * distBlend);
       this.adaptedPos.copy(pose.lookAt).addScaledVector(this.rayOffset, effectivePull);
       targetFov = Math.min(78, Math.max(58, pose.fov * (1.0 + portraitT * 0.24)));
     }
