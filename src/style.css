@@ -37,44 +37,1073 @@ body,
   outline: none;
 }
 
-/* Pure Cinema Bottom Title (matching pure 3D spell showcase style) */
+/* ============================================================================
+   Per-Game Themed Pure Cinema Spell Title (TH06 - TH20)
+   ============================================================================ */
 .cinema-caption {
   position: fixed;
   left: 50%;
-  bottom: 34px;
+  bottom: 28px;
   transform: translateX(-50%);
   text-align: center;
   pointer-events: none;
   z-index: 10;
-  transition: opacity 0.45s ease, bottom 0.35s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 26px 6px;
+  min-width: 280px;
+  max-width: min(92vw, 820px);
+  transition: bottom 0.35s ease;
+  will-change: opacity, transform, filter;
+}
+
+.cinema-caption::before {
+  content: '';
+  position: absolute;
+  inset: -34px -96px -26px;
+  background: radial-gradient(
+    ellipse closest-side at center,
+    rgba(2, 4, 12, 0.72) 0%,
+    rgba(2, 4, 12, 0.42) 48%,
+    rgba(2, 4, 12, 0.14) 76%,
+    rgba(2, 4, 12, 0) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+  transition: background 0.5s ease, opacity 0.5s ease;
 }
 
 .cinema-caption.hud-open {
-  bottom: 112px;
+  bottom: 108px;
 }
 
 .cinema-caption.hidden {
-  opacity: 0;
+  opacity: 0 !important;
+}
+
+.caption-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  line-height: 1.2;
+}
+
+.caption-ornament {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  opacity: 0.78;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.92);
+  transition: color 0.45s ease, opacity 0.45s ease, transform 0.5s ease;
+}
+
+.caption-ornament:empty {
+  display: none;
 }
 
 .caption-meta {
   font-size: 12px;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: rgba(186, 214, 255, 0.74);
-  margin-bottom: 5px;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+  color: rgba(216, 232, 255, 0.9);
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.98),
+    0 2px 12px rgba(0, 0, 0, 0.96);
+  transition: color 0.45s ease, text-shadow 0.45s ease, letter-spacing 0.5s ease;
+}
+
+.caption-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(360px, 66vw);
+  margin: 2px 0 3px;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+}
+
+.rule-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(190, 220, 255, 0.72), transparent);
+  transform-origin: center;
+  transition: background 0.5s ease, box-shadow 0.5s ease;
+}
+
+.rule-line.left {
+  background: linear-gradient(90deg, transparent 0%, rgba(190, 220, 255, 0.75) 100%);
+}
+
+.rule-line.right {
+  background: linear-gradient(90deg, rgba(190, 220, 255, 0.75) 0%, transparent 100%);
+}
+
+.rule-emblem {
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  color: rgba(235, 245, 255, 0.92);
+  text-shadow: 0 0 10px rgba(150, 200, 255, 0.65);
+  transition: color 0.45s ease, text-shadow 0.45s ease, transform 0.5s ease;
+}
+
+.caption-title-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 12px;
 }
 
 .caption-title {
-  font-family: 'Songti SC', 'Noto Serif SC', 'STSong', 'Georgia', serif;
-  font-size: clamp(22px, 2.6vw, 34px);
+  position: relative;
+  font-family: 'Noto Serif SC', 'STSong', 'Georgia', serif;
+  font-size: clamp(22px, 2.55vw, 35px);
   font-weight: 500;
   letter-spacing: 0.16em;
+  line-height: 1.26;
+  white-space: nowrap;
   color: rgba(246, 250, 255, 0.96);
   text-shadow:
     0 0 18px rgba(130, 198, 255, 0.48),
-    0 2px 10px rgba(0, 0, 0, 0.95);
+    0 2px 10px rgba(0, 0, 0, 0.96);
+  transition: color 0.5s ease, text-shadow 0.5s ease, filter 0.45s ease;
+}
+
+.caption-sub {
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  color: rgba(210, 224, 248, 0.84);
+  margin-top: 2px;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.98),
+    0 2px 12px rgba(0, 0, 0, 0.96);
+  transition: color 0.45s ease, opacity 0.45s ease;
+}
+
+@keyframes capSpectrumFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes capSakuraBreath {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes capCautionBlink {
+  0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(255, 168, 38, 0.85), 0 2px 8px #000; }
+  50% { opacity: 0.62; text-shadow: 0 0 18px rgba(255, 68, 28, 0.95), 0 2px 8px #000; }
+}
+
+@keyframes capThermalJitter {
+  0%, 100% { transform: translate(0px, 0px); }
+  25% { transform: translate(0.7px, -0.5px); }
+  50% { transform: translate(-0.6px, 0.6px); }
+  75% { transform: translate(0.5px, 0.4px); }
+}
+
+@keyframes capCyberScan {
+  0% { transform: translateX(-115%) skewX(-18deg); opacity: 0; }
+  18% { opacity: 0.72; }
+  82% { opacity: 0.72; }
+  100% { transform: translateX(135%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes capVoidPulse {
+  0%, 100% { opacity: 0.55; box-shadow: 0 0 8px rgba(230, 36, 68, 0.35); }
+  50% { opacity: 1; box-shadow: 0 0 16px rgba(255, 48, 86, 0.85); }
+}
+
+@keyframes capGoldSweep {
+  0% { background-position: -120% 0; }
+  100% { background-position: 220% 0; }
+}
+
+/* ---------- TH06: 东方红魔乡 · 幻世 "The World" (Gothic Silver-Crimson Clockwork) ---------- */
+.cinema-caption[data-game='TH06'] .caption-meta,
+.cinema-caption[data-game='TH06'] .caption-ornament {
+  font-family: 'Palatino Linotype', 'Noto Serif SC', Georgia, serif;
+  color: rgba(214, 228, 250, 0.88);
+}
+
+.cinema-caption[data-game='TH06'] .caption-ornament {
+  color: rgba(255, 92, 126, 0.9);
+  font-weight: 600;
+}
+
+.cinema-caption[data-game='TH06'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(224, 48, 86, 0.9), rgba(212, 232, 255, 0.92));
+}
+
+.cinema-caption[data-game='TH06'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(212, 232, 255, 0.92), rgba(224, 48, 86, 0.9), transparent);
+}
+
+.cinema-caption[data-game='TH06'] .rule-emblem {
+  color: #ff4b72;
+  text-shadow: 0 0 12px rgba(255, 62, 102, 0.85);
+}
+
+.cinema-caption[data-game='TH06'] .caption-title {
+  font-family: 'Palatino Linotype', 'Noto Serif SC', 'STZhongsong', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #f4f9ff;
+  text-shadow:
+    0 0 16px rgba(176, 214, 255, 0.56),
+    0 0 32px rgba(220, 44, 88, 0.25),
+    0 2px 10px rgba(0, 0, 0, 0.96);
+}
+
+.cinema-caption[data-game='TH06'] .caption-sub {
+  font-family: 'Palatino Linotype', 'Noto Serif SC', serif;
+  color: rgba(224, 178, 192, 0.84);
+}
+
+.cinema-caption[data-game='TH06'].is-timestop .caption-title {
+  color: #dff0ff;
+  text-shadow:
+    0 0 20px rgba(154, 216, 255, 0.78),
+    0 2px 10px rgba(0, 0, 0, 0.98);
+}
+
+.cinema-caption[data-game='TH06'].is-timestop .rule-emblem,
+.cinema-caption[data-game='TH06'].is-timestop .caption-ornament {
+  color: #bfe4ff;
+  text-shadow: 0 0 12px rgba(162, 218, 255, 0.88);
+}
+
+.cinema-caption[data-game='TH06'].is-timestop .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(160, 214, 255, 0.92));
+}
+
+.cinema-caption[data-game='TH06'].is-timestop .rule-line.right {
+  background: linear-gradient(90deg, rgba(160, 214, 255, 0.92), transparent);
+}
+
+.cinema-caption[data-game='TH06'].is-burst .caption-title {
+  text-shadow:
+    0 0 26px rgba(255, 68, 110, 0.95),
+    0 0 42px rgba(204, 232, 255, 0.8),
+    0 2px 10px #000;
+}
+
+/* ---------- TH07: 东方妖妖梦 · "反魂蝶 -八分咲-" (Poetic Sakura Calligraphy) ---------- */
+.cinema-caption[data-game='TH07'] .caption-meta {
+  font-family: 'STKaiti', 'KaiTi', 'Noto Serif SC', serif;
+  color: rgba(255, 210, 232, 0.9);
+  letter-spacing: 0.3em;
+}
+
+.cinema-caption[data-game='TH07'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(255, 168, 214, 0.82));
+}
+
+.cinema-caption[data-game='TH07'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(205, 178, 255, 0.86), transparent);
+}
+
+.cinema-caption[data-game='TH07'] .rule-emblem {
+  color: #ffb8df;
+  font-size: 13px;
+  text-shadow: 0 0 14px rgba(255, 148, 210, 0.9);
+}
+
+.cinema-caption[data-game='TH07'] .caption-title {
+  font-family: 'STXingkai', 'STKaiti', 'KaiTi', 'Noto Serif SC', serif;
+  font-size: clamp(26px, 3vw, 41px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: #fff6fb;
+  text-shadow:
+    0 0 22px rgba(255, 146, 206, 0.72),
+    0 0 40px rgba(176, 142, 255, 0.42),
+    0 2px 12px rgba(14, 4, 20, 0.95);
+  animation: capSakuraBreath 5.2s ease-in-out infinite;
+}
+
+.cinema-caption[data-game='TH07'] .caption-sub {
+  font-family: 'Noto Serif SC Light', 'STKaiti', serif;
+  color: rgba(226, 198, 246, 0.84);
+}
+
+/* ---------- TH08: 东方永夜抄 · 秘术 "天文密葬法" (Celestial Astrolabe FangSong) ---------- */
+.cinema-caption[data-game='TH08'] .caption-meta {
+  font-family: 'Garamond', 'STFangsong', 'Noto Serif SC', serif;
+  color: rgba(184, 208, 255, 0.88);
+  letter-spacing: 0.32em;
+}
+
+.cinema-caption[data-game='TH08'] .caption-rule {
+  position: relative;
+}
+
+.cinema-caption[data-game='TH08'] .caption-rule::after {
+  content: '';
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  bottom: -4px;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(164, 194, 255, 0.5) 0 2px,
+    transparent 2px 7px
+  );
+  opacity: 0.65;
+}
+
+.cinema-caption[data-game='TH08'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(132, 168, 255, 0.82), rgba(235, 96, 128, 0.78));
+}
+
+.cinema-caption[data-game='TH08'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(235, 96, 128, 0.78), rgba(132, 168, 255, 0.82), transparent);
+}
+
+.cinema-caption[data-game='TH08'] .rule-emblem {
+  color: #dce9ff;
+  letter-spacing: 0.28em;
+  text-shadow: 0 0 12px rgba(132, 174, 255, 0.88);
+}
+
+.cinema-caption[data-game='TH08'] .caption-title {
+  font-family: 'STFangsong', 'FangSong', 'Noto Serif SC', 'Garamond', serif;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #f1f6ff;
+  text-shadow:
+    0 0 18px rgba(114, 152, 255, 0.68),
+    0 0 34px rgba(212, 68, 108, 0.3),
+    0 2px 12px rgba(2, 4, 14, 0.96);
+}
+
+.cinema-caption[data-game='TH08'] .caption-sub {
+  font-family: 'Garamond', 'STFangsong', serif;
+  font-style: italic;
+  letter-spacing: 0.2em;
+  color: rgba(206, 186, 224, 0.84);
+}
+
+/* ---------- TH09: 东方花映冢 · 花符 "幻想乡的开花" (Sunlit Botanical Calligraphy) ---------- */
+.cinema-caption[data-game='TH09']::before {
+  background: radial-gradient(
+    ellipse closest-side at center,
+    rgba(46, 22, 4, 0.82) 0%,
+    rgba(38, 18, 4, 0.52) 48%,
+    rgba(32, 14, 2, 0.16) 76%,
+    rgba(32, 14, 2, 0) 100%
+  );
+}
+
+.cinema-caption[data-game='TH09'] .caption-meta,
+.cinema-caption[data-game='TH09'] .caption-ornament {
+  font-family: 'STKaiti', 'KaiTi', Georgia, serif;
+  color: #fff2c8;
+  text-shadow: 0 2px 10px rgba(36, 16, 2, 0.95);
+}
+
+.cinema-caption[data-game='TH09'] .caption-ornament {
+  color: #ffd372;
+  font-size: 13px;
+}
+
+.cinema-caption[data-game='TH09'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(255, 206, 98, 0.92), rgba(255, 142, 168, 0.95));
+}
+
+.cinema-caption[data-game='TH09'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(255, 142, 168, 0.95), rgba(255, 206, 98, 0.92), transparent);
+}
+
+.cinema-caption[data-game='TH09'] .rule-emblem {
+  color: #ffe384;
+  font-size: 14px;
+  text-shadow: 0 0 12px rgba(255, 184, 52, 0.9), 0 1px 6px rgba(48, 20, 0, 0.95);
+}
+
+.cinema-caption[data-game='TH09'] .caption-title {
+  font-family: 'STKaiti', 'KaiTi', 'Noto Serif SC', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #fffef5;
+  text-shadow:
+    0 0 18px rgba(255, 192, 64, 0.78),
+    0 2px 8px rgba(48, 20, 2, 0.98),
+    0 4px 18px rgba(24, 10, 0, 0.95);
+}
+
+.cinema-caption[data-game='TH09'] .caption-sub {
+  font-family: 'Noto Serif SC', 'STKaiti', serif;
+  color: #ffe8b4;
+  text-shadow: 0 2px 10px rgba(40, 16, 2, 0.98);
+}
+
+/* ---------- TH10: 东方风神录 · "Mountain of Faith" (Shinto Shrine Stele + Vermilion/Indigo Ofuda) ---------- */
+.cinema-caption[data-game='TH10'] .caption-meta {
+  font-family: 'STZhongsong', 'Noto Serif SC', serif;
+  color: #ffdfd4;
+  letter-spacing: 0.28em;
+}
+
+.cinema-caption[data-game='TH10'] .caption-ornament {
+  color: #ff4c58;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(235, 56, 68, 0.85);
+}
+
+.cinema-caption[data-game='TH10'] .rule-line {
+  height: 2px;
+}
+
+.cinema-caption[data-game='TH10'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, #e83b48 55%, #ffd98e 100%);
+}
+
+.cinema-caption[data-game='TH10'] .rule-line.right {
+  background: linear-gradient(90deg, #ffd98e 0%, #3d8eff 45%, transparent);
+}
+
+.cinema-caption[data-game='TH10'] .rule-emblem {
+  color: #ff5864;
+  font-size: 13px;
+  text-shadow: 0 0 12px rgba(255, 78, 86, 0.85);
+}
+
+.cinema-caption[data-game='TH10'] .caption-title {
+  font-family: 'STXinwei', 'STZhongsong', 'Noto Serif SC SemiBold', serif;
+  font-size: clamp(20px, 2.2vw, 31px);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #fffbf6;
+  text-shadow:
+    0 0 18px rgba(235, 68, 72, 0.62),
+    0 0 32px rgba(64, 140, 255, 0.34),
+    0 3px 10px rgba(0, 0, 0, 0.98);
+}
+
+.cinema-caption[data-game='TH10'] .caption-sub {
+  font-family: 'STZhongsong', 'Noto Serif SC', serif;
+  color: rgba(176, 212, 255, 0.88);
+}
+
+/* ---------- TH11: 东方地灵殿 · "Subterranean Sun" (Industrial Nuclear Hazard) ---------- */
+.cinema-caption[data-game='TH11'] .caption-meta {
+  font-family: 'Cascadia Mono', 'JetBrainsMono NF', 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #ffc548;
+  animation: capCautionBlink 1.5s ease-in-out infinite;
+}
+
+.cinema-caption[data-game='TH11'] .caption-ornament {
+  font-family: 'Cascadia Mono', monospace;
+  color: #ff6a26;
+  font-weight: 700;
+}
+
+.cinema-caption[data-game='TH11'] .rule-line {
+  height: 2px;
+}
+
+.cinema-caption[data-game='TH11'] .rule-line.left {
+  background: repeating-linear-gradient(
+    -55deg,
+    rgba(255, 192, 42, 0.95) 0 6px,
+    rgba(30, 12, 4, 0.6) 6px 11px
+  );
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 50%);
+  mask-image: linear-gradient(90deg, transparent, #000 50%);
+}
+
+.cinema-caption[data-game='TH11'] .rule-line.right {
+  background: repeating-linear-gradient(
+    -55deg,
+    rgba(255, 192, 42, 0.95) 0 6px,
+    rgba(30, 12, 4, 0.6) 6px 11px
+  );
+  -webkit-mask-image: linear-gradient(90deg, #000 50%, transparent);
+  mask-image: linear-gradient(90deg, #000 50%, transparent);
+}
+
+.cinema-caption[data-game='TH11'] .rule-emblem {
+  color: #ffbe30;
+  font-size: 14px;
+  text-shadow: 0 0 14px rgba(255, 114, 24, 0.95);
+}
+
+.cinema-caption[data-game='TH11'] .caption-title {
+  font-family: 'Bahnschrift SemiBold', 'Noto Sans SC Black', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff6e4;
+  text-shadow:
+    0 0 18px rgba(255, 134, 34, 0.88),
+    0 0 38px rgba(255, 62, 16, 0.56),
+    0 3px 10px rgba(0, 0, 0, 0.98);
+}
+
+.cinema-caption[data-game='TH11'].is-climax .caption-title {
+  animation: capThermalJitter 0.16s linear infinite;
+  text-shadow:
+    0 0 24px rgba(255, 174, 48, 0.98),
+    0 0 48px rgba(255, 66, 18, 0.8),
+    0 3px 10px #000;
+}
+
+.cinema-caption[data-game='TH11'] .caption-sub {
+  font-family: 'Cascadia Mono', 'Consolas', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 176, 106, 0.88);
+}
+
+/* ---------- TH12: 东方星莲船 · 大魔法 "魔神复诵" (Mystic Buddhist Scroll Aura) ---------- */
+.cinema-caption[data-game='TH12'] .caption-meta {
+  font-family: 'Noto Serif SC', 'STZhongsong', serif;
+  color: rgba(228, 198, 255, 0.9);
+  letter-spacing: 0.28em;
+}
+
+.cinema-caption[data-game='TH12'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(180, 108, 255, 0.92), rgba(255, 214, 126, 0.95));
+}
+
+.cinema-caption[data-game='TH12'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(255, 214, 126, 0.95), rgba(92, 224, 255, 0.92), transparent);
+}
+
+.cinema-caption[data-game='TH12'] .rule-emblem {
+  color: #f8d892;
+  text-shadow: 0 0 14px rgba(200, 134, 255, 0.95);
+}
+
+.cinema-caption[data-game='TH12'] .caption-title {
+  font-family: 'STXingkai', 'STZhongsong', 'Noto Serif SC', serif;
+  font-size: clamp(25px, 2.85vw, 39px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: #fdf8ff;
+  text-shadow:
+    0 0 20px rgba(190, 120, 255, 0.78),
+    0 0 36px rgba(96, 220, 255, 0.42),
+    0 2px 12px rgba(8, 2, 20, 0.96);
+}
+
+.cinema-caption[data-game='TH12'] .caption-sub {
+  font-family: 'Noto Serif SC Light', serif;
+  color: rgba(182, 232, 255, 0.86);
+}
+
+/* ---------- TH13: 东方神灵庙 · 眼光 "十七条的光芒" (Imperial Sacred Gold Engraving) ---------- */
+.cinema-caption[data-game='TH13'] .caption-meta,
+.cinema-caption[data-game='TH13'] .caption-ornament {
+  font-family: 'Palatino Linotype', 'Noto Serif SC', Georgia, serif;
+  color: rgba(255, 230, 162, 0.92);
+  letter-spacing: 0.3em;
+}
+
+.cinema-caption[data-game='TH13'] .caption-rule {
+  position: relative;
+}
+
+.cinema-caption[data-game='TH13'] .caption-rule::before {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: -3px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 226, 146, 0.45), transparent);
+}
+
+.cinema-caption[data-game='TH13'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(255, 214, 112, 0.95));
+}
+
+.cinema-caption[data-game='TH13'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(255, 214, 112, 0.95), transparent);
+}
+
+.cinema-caption[data-game='TH13'] .rule-emblem {
+  font-family: 'Palatino Linotype', 'Cambria', Georgia, serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #ffe7a2;
+  text-shadow: 0 0 14px rgba(255, 208, 88, 0.95);
+}
+
+.cinema-caption[data-game='TH13'] .caption-title {
+  font-family: 'STZhongsong', 'Noto Serif SC SemiBold', 'Palatino Linotype', serif;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  background: linear-gradient(
+    105deg,
+    #fff6da 0%,
+    #ffd97d 34%,
+    #ffffff 50%,
+    #ffd97d 66%,
+    #fff6da 100%
+  );
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(255, 204, 82, 0.72)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.95));
+  animation: capGoldSweep 5.5s linear infinite;
+}
+
+.cinema-caption[data-game='TH13'] .caption-sub {
+  font-family: 'Palatino Linotype', 'Noto Serif SC Light', serif;
+  color: rgba(248, 220, 158, 0.86);
+}
+
+/* ---------- TH14: 东方辉针城 · 逆符 "天下翻覆" (Seija Chromatic Glitch & Gravity Inversion) ---------- */
+.cinema-caption[data-game='TH14'] .caption-meta {
+  font-family: 'Cascadia Mono', 'Noto Sans SC Medium', monospace;
+  color: #ffb0c6;
+  letter-spacing: 0.22em;
+}
+
+.cinema-caption[data-game='TH14'] .caption-ornament.left {
+  color: #ff3666;
+}
+
+.cinema-caption[data-game='TH14'] .caption-ornament.right {
+  color: #2ce4ff;
+}
+
+.cinema-caption[data-game='TH14'] .rule-line {
+  height: 2px;
+}
+
+.cinema-caption[data-game='TH14'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, #ff2e63);
+}
+
+.cinema-caption[data-game='TH14'] .rule-line.right {
+  background: linear-gradient(90deg, #24e2ff, transparent);
+}
+
+.cinema-caption[data-game='TH14'] .rule-emblem {
+  color: #ffffff;
+  font-size: 13px;
+  text-shadow: -2px 0 #ff2a5f, 2px 0 #24e2ff;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cinema-caption[data-game='TH14'].is-inverted .rule-emblem {
+  transform: rotate(180deg);
+}
+
+.cinema-caption[data-game='TH14'] .caption-title-wrap {
+  perspective: 680px;
+}
+
+.cinema-caption[data-game='TH14'] .caption-title {
+  font-family: 'Noto Sans SC Black', 'Bahnschrift SemiBold', 'Microsoft YaHei', sans-serif;
+  font-size: clamp(19px, 2.05vw, 29px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  text-shadow:
+    -2.2px 0 rgba(255, 36, 88, 0.9),
+    2.2px 0 rgba(36, 228, 255, 0.9),
+    0 3px 12px rgba(0, 0, 0, 0.98);
+}
+
+/* Upside-down ghostly Seija reflection during gravity inversion */
+.cinema-caption[data-game='TH14'] .caption-title::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 76%;
+  transform: scaleY(-1);
+  opacity: 0;
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow:
+    -2px 0 rgba(255, 42, 92, 0.8),
+    2px 0 rgba(38, 228, 255, 0.8);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent 85%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent 85%);
+  filter: blur(0.6px);
+  transition: opacity 0.65s ease;
+}
+
+.cinema-caption[data-game='TH14'].is-inverted .caption-title::after {
+  opacity: 0.52;
+}
+
+.cinema-caption[data-game='TH14'] .caption-sub {
+  font-family: 'Bahnschrift', 'Noto Sans SC', sans-serif;
+  color: rgba(142, 238, 255, 0.88);
+  margin-top: 6px;
+}
+
+/* ---------- TH15: 东方绀珠传 · 纯符 "纯粹的弹幕地狱" (Stark Swiss Pure Minimalism) ---------- */
+.cinema-caption[data-game='TH15'] .caption-meta {
+  font-family: 'Segoe UI Light', 'Noto Sans SC Light', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.36em;
+  color: rgba(242, 246, 255, 0.82);
+}
+
+.cinema-caption[data-game='TH15'] .caption-rule {
+  width: min(260px, 50vw);
+  gap: 14px;
+}
+
+.cinema-caption[data-game='TH15'] .rule-line {
+  height: 1.5px;
+}
+
+.cinema-caption[data-game='TH15'] .rule-line.left {
+  background: #ff2244;
+}
+
+.cinema-caption[data-game='TH15'] .rule-line.right {
+  background: #2277ff;
+}
+
+.cinema-caption[data-game='TH15'] .rule-emblem {
+  font-size: 7px;
+  color: #ffffff;
+  text-shadow: none;
+}
+
+.cinema-caption[data-game='TH15'] .caption-title {
+  font-family: 'DengXian Light', 'Noto Sans SC Light', 'Segoe UI Light', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.24em;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.98);
+}
+
+.cinema-caption[data-game='TH15'] .caption-sub {
+  font-family: 'Segoe UI Light', 'Noto Sans SC Light', sans-serif;
+  letter-spacing: 0.28em;
+  color: rgba(212, 222, 245, 0.74);
+}
+
+/* ---------- TH16: 东方天空璋 · 后符 "绝对秘神的后光" (Four-Season Backdoor Halo) ---------- */
+.cinema-caption[data-game='TH16'] .caption-meta {
+  font-family: 'Noto Serif SC', 'STZhongsong', serif;
+  color: #ffe8b4;
+  letter-spacing: 0.28em;
+}
+
+.cinema-caption[data-game='TH16'] .caption-ornament.left {
+  color: #ff9ccc;
+  letter-spacing: 0.24em;
+}
+
+.cinema-caption[data-game='TH16'] .caption-ornament.right {
+  color: #82dcff;
+  letter-spacing: 0.24em;
+}
+
+.cinema-caption[data-game='TH16'] .rule-line {
+  height: 2px;
+}
+
+.cinema-caption[data-game='TH16'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, #ff84be 35%, #34e08a 100%);
+}
+
+.cinema-caption[data-game='TH16'] .rule-line.right {
+  background: linear-gradient(90deg, #ff9234 0%, #6ed4ff 65%, transparent);
+}
+
+.cinema-caption[data-game='TH16'] .rule-emblem {
+  color: #ffe696;
+  text-shadow: 0 0 14px rgba(255, 212, 92, 0.95);
+}
+
+.cinema-caption[data-game='TH16'] .caption-title-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -6px 10%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 222, 132, 0.3) 0%,
+    rgba(255, 194, 92, 0.08) 52%,
+    transparent 76%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+.cinema-caption[data-game='TH16'] .caption-title {
+  font-family: 'STZhongsong', 'Noto Serif SC SemiBold', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #fffdf4;
+  text-shadow:
+    0 0 20px rgba(255, 206, 102, 0.72),
+    0 2px 12px rgba(0, 0, 0, 0.96);
+}
+
+.cinema-caption[data-game='TH16'] .caption-sub {
+  font-family: 'Noto Serif SC Light', Georgia, serif;
+  color: rgba(238, 228, 202, 0.86);
+}
+
+/* ---------- TH17: 东方鬼形兽 · "几何造物" (Cyber-Idol Neon Vector HUD) ---------- */
+.cinema-caption[data-game='TH17'] .caption-meta {
+  font-family: 'Cascadia Mono', 'JetBrainsMono NF', 'Consolas', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: #62f4ff;
+  text-shadow: 0 0 10px rgba(42, 230, 255, 0.75), 0 2px 8px #000;
+}
+
+.cinema-caption[data-game='TH17'] .caption-ornament {
+  font-family: 'Cascadia Mono', monospace;
+  color: #ffb842;
+  font-weight: 700;
+}
+
+.cinema-caption[data-game='TH17'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(46, 232, 255, 0.95));
+}
+
+.cinema-caption[data-game='TH17'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(255, 184, 66, 0.95), transparent);
+}
+
+.cinema-caption[data-game='TH17'] .rule-emblem {
+  color: #70f6ff;
+  letter-spacing: 0.34em;
+  text-shadow: 0 0 12px rgba(42, 230, 255, 0.92);
+}
+
+.cinema-caption[data-game='TH17'] .caption-title-wrap {
+  padding: 4px 26px;
+  overflow: hidden;
+}
+
+.cinema-caption[data-game='TH17'] .caption-title-wrap::before,
+.cinema-caption[data-game='TH17'] .caption-title-wrap::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 11px;
+  border-top: 2px solid #44ebff;
+  border-bottom: 2px solid #ffb842;
+  box-shadow: 0 0 10px rgba(44, 235, 255, 0.55);
+  pointer-events: none;
+}
+
+.cinema-caption[data-game='TH17'] .caption-title-wrap::before {
+  left: 2px;
+  border-left: 2px solid #44ebff;
+}
+
+.cinema-caption[data-game='TH17'] .caption-title-wrap::after {
+  right: 2px;
+  border-right: 2px solid #ffb842;
+}
+
+.cinema-caption[data-game='TH17'] .caption-title {
+  font-family: 'Bahnschrift', 'Noto Sans SC Medium', 'Microsoft YaHei', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: #efffff;
+  text-shadow:
+    0 0 16px rgba(44, 232, 255, 0.8),
+    0 0 32px rgba(255, 178, 56, 0.32),
+    0 2px 10px #000;
+}
+
+.cinema-caption[data-game='TH17'] .caption-title::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(96, 248, 255, 0.55), transparent);
+  pointer-events: none;
+  animation: capCyberScan 3.4s ease-in-out infinite;
+}
+
+.cinema-caption[data-game='TH17'] .caption-sub {
+  font-family: 'Cascadia Mono', 'Consolas', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 198, 102, 0.88);
+}
+
+/* ---------- TH18: 东方虹龙洞 · "虹人环" (7-Color ROYGBIV Prismatic Spectrum) ---------- */
+.cinema-caption[data-game='TH18'] .caption-meta {
+  font-family: 'Segoe UI', 'Noto Sans SC Light', sans-serif;
+  color: rgba(238, 245, 255, 0.9);
+  letter-spacing: 0.3em;
+}
+
+.cinema-caption[data-game='TH18'] .rule-line {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    #ff3858,
+    #ff9828,
+    #ffe838,
+    #34e07e,
+    #24dcff,
+    #4c7dff,
+    #be4dff,
+    #ff3858
+  );
+  background-size: 220% 100%;
+  animation: capSpectrumFlow 4.2s linear infinite;
+}
+
+.cinema-caption[data-game='TH18'] .rule-line.left {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%);
+  mask-image: linear-gradient(90deg, transparent, #000 45%);
+}
+
+.cinema-caption[data-game='TH18'] .rule-line.right {
+  -webkit-mask-image: linear-gradient(90deg, #000 55%, transparent);
+  mask-image: linear-gradient(90deg, #000 55%, transparent);
+}
+
+.cinema-caption[data-game='TH18'] .rule-emblem {
+  color: #ffffff;
+  font-size: 13px;
+  text-shadow: -1.5px 0 rgba(255, 72, 110, 0.85), 1.5px 0 rgba(48, 224, 255, 0.85);
+}
+
+.cinema-caption[data-game='TH18'] .caption-title {
+  font-family: 'Noto Sans SC Medium', 'Segoe UI', 'Microsoft YaHei Light', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  color: #ffffff;
+  text-shadow:
+    -1.6px 0 rgba(255, 68, 108, 0.56),
+    1.6px 0 rgba(48, 214, 255, 0.56),
+    0 0 22px rgba(188, 218, 255, 0.65),
+    0 2px 12px rgba(0, 0, 0, 0.96);
+}
+
+.cinema-caption[data-game='TH18'] .caption-sub {
+  font-family: 'Segoe UI Light', 'Noto Sans SC Light', sans-serif;
+  color: rgba(224, 236, 255, 0.86);
+}
+
+/* ---------- TH19: 东方兽王园 · "亡羊的王国" (Stark Abyssal Crimson Blade) ---------- */
+.cinema-caption[data-game='TH19'] .caption-meta {
+  font-family: 'Noto Serif SC Light', 'STSong', serif;
+  color: rgba(218, 222, 232, 0.8);
+  letter-spacing: 0.34em;
+}
+
+.cinema-caption[data-game='TH19'] .rule-line {
+  height: 1px;
+  animation: capVoidPulse 3.6s ease-in-out infinite;
+}
+
+.cinema-caption[data-game='TH19'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(232, 34, 66, 0.92));
+}
+
+.cinema-caption[data-game='TH19'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(232, 34, 66, 0.92), transparent);
+}
+
+.cinema-caption[data-game='TH19'] .rule-emblem {
+  color: #ea3454;
+  font-size: 11px;
+  text-shadow: 0 0 12px rgba(236, 36, 68, 0.88);
+}
+
+.cinema-caption[data-game='TH19'] .caption-title {
+  font-family: 'Noto Serif SC ExtraLight', 'Noto Serif SC Light', 'STSong', serif;
+  font-weight: 300;
+  letter-spacing: 0.28em;
+  color: #f7f8fc;
+  text-shadow:
+    0 0 18px rgba(220, 34, 64, 0.42),
+    0 2px 12px #000;
+}
+
+.cinema-caption[data-game='TH19'] .caption-sub {
+  font-family: 'Noto Serif SC Light', Georgia, serif;
+  letter-spacing: 0.26em;
+  color: rgba(208, 170, 178, 0.78);
+}
+
+/* ---------- TH20: 东方锦上京 · "弹幕的化石" (Ancient Engraved Clerical Stele & Strata) ---------- */
+.cinema-caption[data-game='TH20'] .caption-meta {
+  font-family: 'STZhongsong', 'Noto Serif SC', serif;
+  color: #edd092;
+  letter-spacing: 0.3em;
+}
+
+.cinema-caption[data-game='TH20'] .caption-ornament {
+  color: #5cd8b8;
+  text-shadow: 0 0 10px rgba(72, 206, 172, 0.75);
+}
+
+.cinema-caption[data-game='TH20'] .caption-rule {
+  position: relative;
+}
+
+.cinema-caption[data-game='TH20'] .caption-rule::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -4px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(78, 206, 176, 0.8), transparent);
+}
+
+.cinema-caption[data-game='TH20'] .rule-line.left {
+  background: linear-gradient(90deg, transparent, rgba(232, 178, 84, 0.94));
+}
+
+.cinema-caption[data-game='TH20'] .rule-line.right {
+  background: linear-gradient(90deg, rgba(232, 178, 84, 0.94), transparent);
+}
+
+.cinema-caption[data-game='TH20'] .rule-emblem {
+  color: #5cd8b8;
+  font-size: 13px;
+  text-shadow: 0 0 12px rgba(84, 214, 182, 0.85);
+}
+
+.cinema-caption[data-game='TH20'] .caption-title {
+  font-family: 'STLiti', 'LiSu', 'STXinwei', 'Noto Serif SC SemiBold', serif;
+  font-size: clamp(26px, 2.95vw, 40px);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: #fff6de;
+  text-shadow:
+    0 0 20px rgba(232, 176, 74, 0.72),
+    0 2px 10px rgba(18, 12, 4, 0.98);
+  transition: color 1.4s ease, text-shadow 1.4s ease;
+}
+
+.cinema-caption[data-game='TH20'].is-petrified .caption-title {
+  color: #eae6d9;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 18px rgba(86, 208, 178, 0.56),
+    0 3px 12px rgba(6, 10, 10, 0.98);
+}
+
+.cinema-caption[data-game='TH20'] .caption-sub {
+  font-family: 'Noto Serif SC', 'STSong', serif;
+  color: rgba(142, 222, 200, 0.88);
+  margin-top: 4px;
 }
 
 /* Director HUD */

@@ -52,6 +52,7 @@ export class TH17GeometricCreatureSpell implements SpellCardInstance {
   private sculptureOuter = new THREE.Group();
   private sculptureMid = new THREE.Group();
   private sculptureCore = new THREE.Group();
+  private polygonLaserCages: { group: THREE.Group; mat: THREE.MeshBasicMaterial; sides: number }[] = [];
   private gridFloor: THREE.GridHelper | null = null;
   private gridCeil: THREE.GridHelper | null = null;
   private polyMesh: THREE.InstancedMesh | null = null;
@@ -153,6 +154,58 @@ export class TH17GeometricCreatureSpell implements SpellCardInstance {
 
     this.root.add(this.sculptureOuter, this.sculptureMid, this.sculptureCore);
 
+    // 2b. Authentic Keiki "Geometric Creature" Signature:
+    // Rotating 3D Glowing Laser-Traced Polygon Cages (Triangle △, Square □, Hexagon ⬡) built with crisp TubeGeometry!
+    this.polygonLaserCages = [];
+    const cageSpecs: { sides: number; radius: number; col: number; tilt: [number, number, number] }[] = [
+      { sides: 3, radius: 10.5, col: 0x38f2ff, tilt: [0.35, 0.0, 0.2] },
+      { sides: 4, radius: 13.4, col: 0xffc442, tilt: [-0.48, 0.35, -0.15] },
+      { sides: 6, radius: 16.5, col: 0xff44a4, tilt: [0.22, -0.52, 0.4] },
+    ];
+    for (let c = 0; c < cageSpecs.length; c++) {
+      const spec = cageSpecs[c];
+      const cageGrp = new THREE.Group();
+      cageGrp.rotation.set(...spec.tilt);
+      const pts: THREE.Vector3[] = [];
+      for (let v = 0; v <= spec.sides; v++) {
+        const a = (v / spec.sides) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(a) * spec.radius, Math.sin(a) * spec.radius, 0));
+      }
+      const mat = new THREE.MeshBasicMaterial({
+        color: spec.col,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      this.materials.push(mat);
+
+      // Build paired front & back parallel laser polygon frames joined by glowing corner struts
+      for (let s = 0; s < spec.sides; s++) {
+        const p0 = pts[s];
+        const p1 = pts[s + 1];
+        const edgeCurveA = new THREE.LineCurve3(
+          new THREE.Vector3(p0.x, p0.y, 1.4),
+          new THREE.Vector3(p1.x, p1.y, 1.4),
+        );
+        const edgeCurveB = new THREE.LineCurve3(
+          new THREE.Vector3(p0.x, p0.y, -1.4),
+          new THREE.Vector3(p1.x, p1.y, -1.4),
+        );
+        const strutCurve = new THREE.LineCurve3(
+          new THREE.Vector3(p0.x, p0.y, -1.4),
+          new THREE.Vector3(p0.x, p0.y, 1.4),
+        );
+        const gA = new THREE.TubeGeometry(edgeCurveA, 2, 0.085, 6, false);
+        const gB = new THREE.TubeGeometry(edgeCurveB, 2, 0.085, 6, false);
+        const gS = new THREE.TubeGeometry(strutCurve, 2, 0.075, 6, false);
+        this.geometries.push(gA, gB, gS);
+        cageGrp.add(new THREE.Mesh(gA, mat), new THREE.Mesh(gB, mat), new THREE.Mesh(gS, mat));
+      }
+      this.root.add(cageGrp);
+      this.polygonLaserCages.push({ group: cageGrp, mat, sides: spec.sides });
+    }
+
     // 3. 2,400 Instanced Sharp Geometric Polyhedral Bullets (solid dark cyber prism + glowing wireframe shell!)
     const rand = createSeededRandom(20190812); // Touhou 17 WBaWC release date seed!
     const count = 2400;
@@ -181,17 +234,20 @@ export class TH17GeometricCreatureSpell implements SpellCardInstance {
       });
     }
 
-    const tetraGeom = new THREE.OctahedronGeometry(0.85, 0);
-    const solidMat = new THREE.MeshStandardMaterial({
-      color: 0x0b1220,
-      metalness: 0.9,
-      roughness: 0.18,
+    // Precision-machined 20-faced Icosahedron prisms with clearcoat dark glass + crisp neon wireframe edges
+    const tetraGeom = new THREE.IcosahedronGeometry(0.68, 0);
+    const solidMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0a1120,
+      metalness: 0.94,
+      roughness: 0.12,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
     });
     const wireMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       wireframe: true,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending,
     });
     this.geometries.push(tetraGeom);
@@ -246,6 +302,17 @@ export class TH17GeometricCreatureSpell implements SpellCardInstance {
     this.sculptureMid.rotation.set(-t * 0.45, -t * 0.38, t * 0.26);
     this.sculptureMid.scale.setScalar((0.35 + 0.65 * assemble) * (1.0 + climax * 0.12));
     this.sculptureCore.rotation.set(t * 0.78, -t * 0.64, -t * 0.52);
+
+    // Step-rotate Keiki's △ / □ / ⬡ laser-traced polygon cages smoothly!
+    for (let c = 0; c < this.polygonLaserCages.length; c++) {
+      const cage = this.polygonLaserCages[c];
+      const reveal = smoothstep(1.2 + c * 1.1, 2.6 + c * 1.1, t);
+      const dir = c % 2 === 0 ? 1 : -1;
+      cage.group.rotation.z = t * dir * (0.38 - c * 0.06);
+      cage.group.rotation.y = Math.sin(t * 0.45 + c) * 0.55;
+      cage.group.scale.setScalar(0.55 + 0.45 * reveal + climax * 0.08);
+      cage.mat.opacity = (0.62 + climax * 0.32) * reveal;
+    }
 
     // Update all 2,400 dual-pass (solid dark prism + neon wireframe) geometric bullets!
     for (let i = 0; i < this.bullets.length; i++) {

@@ -91,3 +91,33 @@ export function orientForwardWithRoll(
   }
   return outQuat;
 }
+
+/**
+ * Builds an iconic Touhou 3D 5-pointed Star Bullet (`星弹`) geometry with crisp faceted peaks
+ * along front/back Z faces so star danmaku read unmistakably in TH08 and TH12.
+ */
+export function createStarBulletGeometry(outerR = 1.0, innerR = 0.44, depth = 0.28): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const points = 5;
+  const ring: [number, number][] = [];
+  for (let i = 0; i < points * 2; i++) {
+    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI * 0.5;
+    const r = i % 2 === 0 ? outerR : innerR;
+    ring.push([Math.cos(a) * r, Math.sin(a) * r]);
+  }
+
+  for (let i = 0; i < ring.length; i++) {
+    const [x0, y0] = ring[i];
+    const [x1, y1] = ring[(i + 1) % ring.length];
+    // Front pyramid face (+Z)
+    positions.push(0, 0, depth, x0, y0, 0, x1, y1, 0);
+    // Back pyramid face (-Z)
+    positions.push(0, 0, -depth, x1, y1, 0, x0, y0, 0);
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  geom.computeBoundingSphere();
+  return geom;
+}

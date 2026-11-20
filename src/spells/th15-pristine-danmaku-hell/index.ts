@@ -98,32 +98,32 @@ export class TH15PristineDanmakuHellSpell implements SpellCardInstance {
       }
     }
 
-    // 2. Cold 3D Mathematical Cubic Lattice Grid (3,375 spheres = 15 x 15 x 15 hollow-cored matrix!)
-    const gridN = 15;
-    const spacing = 2.65;
-    const half = ((gridN - 1) * spacing) * 0.5;
-    for (let ix = 0; ix < gridN; ix++) {
-      for (let iy = 0; iy < gridN; iy++) {
-        for (let iz = 0; iz < gridN; iz++) {
-          const x = ix * spacing - half;
-          const y = iy * spacing - half;
-          const z = iz * spacing - half;
-          // Leave clean geometric inner eye right at center
-          const r = Math.hypot(x, y, z);
-          if (r < 4.2) continue;
-          const parity = (ix + iy + iz) % 3;
-          const col = parity === 0 ? cRed : parity === 1 ? cBlue : cWhite;
-          this.bullets.push({
-            group: 'lattice',
-            waveIdx: Math.floor(r),
-            dir: new THREE.Vector3(x, y, z).normalize(),
-            basePos: new THREE.Vector3(x, y, z),
-            speed: 0,
-            spinRate: 0.08,
-            scale: 0.19,
-            color: col.clone(),
-          });
-        }
+    // 2. Authentic Junko Counter-Rotating Pure-Circle Moire Interference Rings (3,600 spheres!)
+    // Replaces cubic grid with strictly pure concentric spherical rings -- 100% pure Junko geometry!
+    const moireRings = 24;
+    const perMoire = 150;
+    for (let rIdx = 0; rIdx < moireRings; rIdx++) {
+      const col = rIdx % 3 === 0 ? cRed : rIdx % 3 === 1 ? cBlue : cWhite;
+      const lat = ((rIdx / (moireRings - 1)) - 0.5) * Math.PI * 0.86;
+      const cosLat = Math.cos(lat);
+      const sinLat = Math.sin(lat);
+      const radius = 11.5 + (rIdx % 4) * 3.4;
+      const dirSign = rIdx % 2 === 0 ? 1 : -1;
+      for (let j = 0; j < perMoire; j++) {
+        const a = (j / perMoire) * Math.PI * 2;
+        const bx = Math.cos(a) * cosLat * radius;
+        const by = sinLat * radius;
+        const bz = Math.sin(a) * cosLat * radius;
+        this.bullets.push({
+          group: 'lattice',
+          waveIdx: rIdx,
+          dir: new THREE.Vector3(bx, by, bz).normalize(),
+          basePos: new THREE.Vector3(bx, by, bz),
+          speed: 0,
+          spinRate: dirSign * (0.24 + (rIdx % 3) * 0.08),
+          scale: 0.21,
+          color: col.clone(),
+        });
       }
     }
 
@@ -153,8 +153,8 @@ export class TH15PristineDanmakuHellSpell implements SpellCardInstance {
       }
     }
 
-    // Crisp solid Touhou glowing orb shader: bright pure white inner core, saturated solid colored shell!
-    const sphereGeom = new THREE.SphereGeometry(1.0, 10, 8);
+    // Crisp solid Touhou glowing orb shader with smooth 18x12 spherical silhouette!
+    const sphereGeom = new THREE.SphereGeometry(1.0, 18, 12);
     const sphereMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: true,
@@ -222,8 +222,6 @@ export class TH15PristineDanmakuHellSpell implements SpellCardInstance {
     const latticeReveal = smoothstep(2.6, 5.4, t);
     const hellIntensity = smoothstep(6.2, 8.2, t);
     const latRot = t * 0.14;
-    const cosL = Math.cos(latRot);
-    const sinL = Math.sin(latRot);
 
     for (let i = 0; i < this.bullets.length; i++) {
       const b = this.bullets[i];
@@ -261,12 +259,15 @@ export class TH15PristineDanmakuHellSpell implements SpellCardInstance {
           this.sphereMesh.setMatrixAt(i, this._mat4);
           continue;
         }
-        // Slowly breathing geometric cubic cage tightening inward with suffocating precision!
-        const breathe = 1.0 - hellIntensity * 0.16 + Math.sin(t * 2.4 + b.waveIdx * 0.35) * 0.04;
+        // Counter-rotating concentric pure Moire rings creating hypnotic Junko interference!
+        const breathe = 1.0 - hellIntensity * 0.14 + Math.sin(t * 2.2 + b.waveIdx * 0.5) * 0.06;
+        const rot = t * b.spinRate + (b.waveIdx % 2 === 0 ? latRot : -latRot);
+        const cr = Math.cos(rot);
+        const sr = Math.sin(rot);
         const bx = b.basePos.x * breathe;
         const by = b.basePos.y * breathe;
         const bz = b.basePos.z * breathe;
-        this._pos.set(bx * cosL - bz * sinL, by, bx * sinL + bz * cosL);
+        this._pos.set(bx * cr - bz * sr, by, bx * sr + bz * cr);
         this._quat.identity();
         this._scale.setScalar(b.scale * latticeReveal);
         this._mat4.compose(this._pos, this._quat, this._scale);

@@ -71,6 +71,8 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
   public readonly phases = TH16_PHASES;
 
   private root = new THREE.Group();
+  private backlightHalo: THREE.Mesh | null = null;
+  private haloMat: THREE.ShaderMaterial | null = null;
   private doors: BackdoorRig[] = [];
   private bulletMesh: THREE.InstancedMesh | null = null;
   private bullets: SeasonBullet[] = [];
@@ -99,6 +101,68 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
     const goldKey = new THREE.PointLight(0xffd278, 28, 60, 1.4);
     goldKey.position.set(0, 10, 14);
     this.root.add(amb, goldKey);
+
+    // 0. Authentic Okina "绝对秘神的后光" (Absolute Secret God's Backlight Halo)!
+    // Colossal 4-quadrant rotating Spring/Summer/Autumn/Winter sacred Buddhist aura ring behind the doors!
+    const haloGeom = new THREE.PlaneGeometry(34, 34);
+    this.haloMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      uniforms: {
+        uTime: { value: 0 },
+        uOpacity: { value: 0.72 },
+      },
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uTime;
+        uniform float uOpacity;
+        varying vec2 vUv;
+
+        void main() {
+          vec2 p = (vUv - 0.5) * 2.0;
+          float r = length(p);
+          if (r > 1.0) discard;
+          float a = atan(p.y, p.x);
+
+          // 4 Season quadrants rotating smoothly around the sacred Backlight Halo!
+          float rotA = a - uTime * 0.25;
+          float q = fract((rotA + 3.14159265) / 6.2831853);
+          vec3 cSpring = vec3(1.0, 0.50, 0.78);
+          vec3 cSummer = vec3(0.24, 0.90, 0.58);
+          vec3 cAutumn = vec3(1.0, 0.46, 0.16);
+          vec3 cWinter = vec3(0.38, 0.82, 1.0);
+
+          vec3 seasonCol = mix(cSpring, cSummer, smoothstep(0.20, 0.30, q));
+          seasonCol = mix(seasonCol, cAutumn, smoothstep(0.45, 0.55, q));
+          seasonCol = mix(seasonCol, cWinter, smoothstep(0.70, 0.80, q));
+          seasonCol = mix(seasonCol, cSpring, smoothstep(0.95, 1.0, q));
+
+          // Sacred concentric gold-rimmed rings + 24 radiating "后光" sunburst rays
+          float outerRing = exp(-((r - 0.88) * (r - 0.88)) / 0.0008);
+          float midRing = exp(-((r - 0.58) * (r - 0.58)) / 0.0007);
+          float innerRing = exp(-((r - 0.30) * (r - 0.30)) / 0.0009);
+          float rays = (0.5 + 0.5 * sin(rotA * 24.0)) * smoothstep(0.26, 0.55, r) * (1.0 - smoothstep(0.72, 0.96, r));
+
+          vec3 gold = vec3(1.25, 0.98, 0.45);
+          vec3 col = seasonCol * (rays * 0.52 + midRing * 0.45) + gold * (outerRing * 0.85 + innerRing * 0.72 + midRing * 0.5);
+          float alpha = clamp(outerRing * 0.85 + midRing * 0.65 + innerRing * 0.7 + rays * 0.32, 0.0, 1.0) * uOpacity;
+          gl_FragColor = vec4(col, alpha);
+        }
+      `,
+    });
+    this.backlightHalo = new THREE.Mesh(haloGeom, this.haloMat);
+    this.backlightHalo.position.set(0, 0.2, -13.5);
+    this.root.add(this.backlightHalo);
+    this.geometries.push(haloGeom);
+    this.materials.push(this.haloMat);
 
     // 1. 8 Floating Non-Euclidean Backdoor Portals suspended at dramatic tilted 3D angles!
     const doorConfigs: { pos: [number, number, number]; look: [number, number, number]; roll: number }[] = [
@@ -240,12 +304,12 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
         speed: 7.2 + rand() * 4.8,
         spreadX: (rand() - 0.5) * 3.4,
         spreadY: (rand() - 0.5) * 5.0,
-        scale: 0.16 + rand() * 0.18,
+        scale: 0.11 + rand() * 0.12,
         color: baseCol,
       });
     }
 
-    const orbGeom = new THREE.OctahedronGeometry(0.95, 1);
+    const orbGeom = new THREE.SphereGeometry(1.0, 20, 14);
     const orbMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -259,7 +323,7 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
           vec4 mvPos = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
           vNormal = normalize(normalMatrix * mat3(instanceMatrix) * normal);
           vViewDir = normalize(-mvPos.xyz);
-          vNearFade = smoothstep(1.8, 5.0, -mvPos.z);
+          vNearFade = smoothstep(3.5, 9.5, -mvPos.z);
           #ifdef USE_INSTANCING_COLOR
             vColor = instanceColor;
           #else
@@ -276,8 +340,8 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
         void main() {
           float ndv = clamp(abs(dot(normalize(vNormal), normalize(vViewDir))), 0.0, 1.0);
           float core = ndv * ndv;
-          vec3 col = mix(vColor * 0.88, mix(vColor, vec3(1.06, 1.04, 1.0), 0.42), smoothstep(0.62, 0.96, core));
-          float alpha = (0.14 + core * 0.56) * vNearFade;
+          vec3 col = mix(vColor * 0.78, mix(vColor, vec3(1.04, 1.02, 0.98), 0.32), smoothstep(0.66, 0.96, core));
+          float alpha = (0.08 + core * 0.36) * vNearFade;
           if (alpha < 0.01) discard;
           gl_FragColor = vec4(col, alpha);
         }
@@ -294,15 +358,15 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
     if (this.bulletMesh.instanceColor) this.bulletMesh.instanceColor.needsUpdate = true;
     this.root.add(this.bulletMesh);
 
-    // 3. Sweeping Camera navigating through the floating seasonal doorway sanctuary
+    // 3. Sweeping Camera framing the 8 golden backdoors & rotating 4-season Backlight Halo crisply
     this.camCurve = new THREE.CatmullRomCurve3(
       [
-        new THREE.Vector3(0.0, 1.2, 22.5),
-        new THREE.Vector3(8.5, 2.6, 16.5),
-        new THREE.Vector3(6.2, -1.8, 9.8),
-        new THREE.Vector3(-7.4, 2.2, 11.2),
-        new THREE.Vector3(-5.8, 4.4, 18.8),
-        new THREE.Vector3(0.0, 2.0, 24.0),
+        new THREE.Vector3(0.0, 1.2, 24.5),
+        new THREE.Vector3(9.6, 2.8, 20.5),
+        new THREE.Vector3(7.4, -1.6, 16.5),
+        new THREE.Vector3(-8.4, 2.4, 17.0),
+        new THREE.Vector3(-6.4, 4.4, 22.0),
+        new THREE.Vector3(0.0, 2.0, 25.5),
       ],
       false,
       'centripetal',
@@ -323,6 +387,12 @@ export class TH16HiddenGodSpell implements SpellCardInstance {
     ctx.cameraPose.roll = Math.sin(p * Math.PI * 2) * 0.11;
     ctx.cameraPose.fov = 52 + Math.sin(p * Math.PI) * 5.0;
     ctx.cameraPose.shake = 0;
+
+    if (this.haloMat && this.backlightHalo) {
+      this.haloMat.uniforms.uTime.value = t;
+      this.haloMat.uniforms.uOpacity.value = smoothstep(0.4, 2.2, t) * closeFade * 0.78;
+      this.backlightHalo.scale.setScalar(0.85 + 0.15 * smoothstep(0.4, 3.0, t));
+    }
 
     // Animate all 8 floating non-Euclidean doors opening & pouring seasonal light
     const doorOpenAmounts: number[] = [];

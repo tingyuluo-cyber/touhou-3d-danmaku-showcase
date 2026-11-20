@@ -96,7 +96,7 @@ export class GravityDanmaku {
       });
     }
 
-    this.orbGeom = new THREE.SphereGeometry(1.0, 14, 10);
+    this.orbGeom = new THREE.SphereGeometry(1.0, 20, 14);
     // Luminous Touhou energy-orb Fresnel shader: hot incandescent white-gold core + fiery colored halo
     // + smooth near-camera lens fade so close bullets never block the miniature sun!
     this.orbMat = new THREE.ShaderMaterial({

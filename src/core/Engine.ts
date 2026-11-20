@@ -273,11 +273,12 @@ export class DanmakuEngine implements RecorderHost {
     return this.currentSpell?.duration ?? 22;
   }
 
-  public getCaptionInfo(): { meta: string; title: string; gameCode: string } {
+  public getCaptionInfo(): { meta: string; title: string; character: string; gameCode: string } {
     const meta = this.currentSpell?.metadata;
     return {
       meta: meta ? `${meta.gameCode} · ${meta.gameName}` : 'TH06 · 东方红魔乡',
       title: meta ? meta.spellName : '幻世 "The World"',
+      character: meta ? meta.character : '十六夜咲夜',
       gameCode: meta?.gameCode ?? 'TH06',
     };
   }

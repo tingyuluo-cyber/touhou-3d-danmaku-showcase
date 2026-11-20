@@ -4,6 +4,7 @@ import type { TimelinePhase } from '../../core/Timeline';
 import {
   clamp,
   createSeededRandom,
+  createStarBulletGeometry,
   lerp,
   smootherstep,
   smoothstep,
@@ -63,7 +64,10 @@ export class TH08AstronomicalEntombingSpell implements SpellCardInstance {
   private moonMat: THREE.ShaderMaterial | null = null;
   private armillaryGroup = new THREE.Group();
   private orbitRingMeshes: THREE.Mesh[] = [];
+  private familiarPlanets: { mesh: THREE.Mesh; planeIdx: number; angle0: number; speed: number }[] = [];
+  private constellationLines: THREE.LineSegments | null = null;
   private bulletMesh: THREE.InstancedMesh | null = null;
+  private starBulletMesh: THREE.InstancedMesh | null = null;
   private starfield: THREE.Points | null = null;
 
   private planes: OrbitPlaneSpec[] = [];
@@ -245,7 +249,7 @@ export class TH08AstronomicalEntombingSpell implements SpellCardInstance {
       });
     }
 
-    const orbGeom = new THREE.SphereGeometry(1.0, 12, 10);
+    const orbGeom = new THREE.SphereGeometry(1.0, 20, 14);
     const orbMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -293,6 +297,67 @@ export class TH08AstronomicalEntombingSpell implements SpellCardInstance {
     }
     if (this.bulletMesh.instanceColor) this.bulletMesh.instanceColor.needsUpdate = true;
     this.root.add(this.bulletMesh);
+
+    // 4b. Authentic TH08 Eirin Signatures:
+    // - 14 Glowing Miniature Moon/Planet Familiars (使魔天体) orbiting on the 7 tilted planes
+    // - Luminous Constellation Web Lines (天文星图连线) connecting orbiting familiars
+    // - 900 Sculpted 5-Point Touhou Star Bullets (`星弹`) trailing behind the planets!
+    const famGeom = new THREE.SphereGeometry(0.92, 20, 14);
+    this.geometries.push(famGeom);
+    this.familiarPlanets = [];
+    for (let i = 0; i < 14; i++) {
+      const planeIdx = i % this.planes.length;
+      const pCol = this.planes[planeIdx].color;
+      const famMat = new THREE.MeshBasicMaterial({
+        color: pCol.clone().lerp(new THREE.Color(0xffffff), 0.35),
+        transparent: true,
+        opacity: 0.92,
+      });
+      this.materials.push(famMat);
+      const mesh = new THREE.Mesh(famGeom, famMat);
+      this.root.add(mesh);
+      this.familiarPlanets.push({
+        mesh,
+        planeIdx,
+        angle0: (i / 14) * Math.PI * 2 + planeIdx * 0.7,
+        speed: this.planes[planeIdx].angularSpeed,
+      });
+    }
+
+    // Dynamic constellation web connecting adjacent orbiting planet familiars (28 glowing astronomical edges!)
+    const webPos = new Float32Array(28 * 2 * 3);
+    const webGeom = new THREE.BufferGeometry();
+    webGeom.setAttribute('position', new THREE.BufferAttribute(webPos, 3));
+    const webMat = new THREE.LineBasicMaterial({
+      color: 0x7ac8ff,
+      transparent: true,
+      opacity: 0.48,
+      blending: THREE.AdditiveBlending,
+    });
+    this.constellationLines = new THREE.LineSegments(webGeom, webMat);
+    this.root.add(this.constellationLines);
+    this.geometries.push(webGeom);
+    this.materials.push(webMat);
+
+    // 900 Sculpted 5-Point Star Bullets (`星弹`) cascading along the outer ecliptic planes!
+    const starBulletGeom = createStarBulletGeometry(0.46, 0.2, 0.12);
+    const starBulletMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.geometries.push(starBulletGeom);
+    this.materials.push(starBulletMat);
+    this.starBulletMesh = new THREE.InstancedMesh(starBulletGeom, starBulletMat, 900);
+    this.starBulletMesh.frustumCulled = false;
+    const starCols = [cSapphire, cCrimson, cViolet, cMoonWhite];
+    for (let i = 0; i < 900; i++) {
+      this.starBulletMesh.setColorAt(i, starCols[i % starCols.length]);
+    }
+    if (this.starBulletMesh.instanceColor) this.starBulletMesh.instanceColor.needsUpdate = true;
+    this.root.add(this.starBulletMesh);
 
     // 5. 3,000 Deep Space Starfield & Milky Way Dust
     const glowTex = createSoftGlowTexture(128);
@@ -403,6 +468,53 @@ export class TH08AstronomicalEntombingSpell implements SpellCardInstance {
     }
     this.bulletMesh.instanceMatrix.needsUpdate = true;
 
+    // Update 14 orbiting Moon/Planet Familiars + live Constellation Star-Web Lines!
+    for (let i = 0; i < this.familiarPlanets.length; i++) {
+      const f = this.familiarPlanets[i];
+      const pl = this.planes[f.planeIdx];
+      const reveal = smoothstep(f.planeIdx * 0.4, f.planeIdx * 0.4 + 1.2, t);
+      const a = f.angle0 + t * f.speed;
+      this._pos.set(Math.cos(a) * pl.radiusX, 0, Math.sin(a) * pl.radiusZ).applyQuaternion(pl.quat);
+      f.mesh.position.copy(this._pos);
+      f.mesh.scale.setScalar(reveal * (0.75 + 0.15 * Math.sin(t * 3.0 + i)));
+    }
+
+    if (this.constellationLines && this.familiarPlanets.length === 14) {
+      const posAttr = this.constellationLines.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const arr = posAttr.array as Float32Array;
+      let ptr = 0;
+      for (let i = 0; i < 14; i++) {
+        const pA = this.familiarPlanets[i].mesh.position;
+        const pB = this.familiarPlanets[(i + 1) % 14].mesh.position;
+        const pC = this.familiarPlanets[(i + 4) % 14].mesh.position;
+        arr[ptr++] = pA.x; arr[ptr++] = pA.y; arr[ptr++] = pA.z;
+        arr[ptr++] = pB.x; arr[ptr++] = pB.y; arr[ptr++] = pB.z;
+        arr[ptr++] = pA.x; arr[ptr++] = pA.y; arr[ptr++] = pA.z;
+        arr[ptr++] = pC.x; arr[ptr++] = pC.y; arr[ptr++] = pC.z;
+      }
+      posAttr.needsUpdate = true;
+      (this.constellationLines.material as THREE.LineBasicMaterial).opacity = 0.42 * smoothstep(1.5, 4.0, t);
+    }
+
+    // Update 900 sculpted 5-point Star Bullets (`星弹`) flowing along the celestial rings
+    if (this.starBulletMesh) {
+      const starReveal = smoothstep(1.2, 3.6, t);
+      for (let i = 0; i < 900; i++) {
+        const plIdx = i % this.planes.length;
+        const pl = this.planes[plIdx];
+        const a = (i / 900) * Math.PI * 2 * 7 - t * pl.angularSpeed * 0.72;
+        const rJitter = ((i % 7) - 3) * 0.65;
+        this._pos
+          .set(Math.cos(a) * (pl.radiusX + rJitter), ((i % 5) - 2) * 0.4, Math.sin(a) * (pl.radiusZ + rJitter))
+          .applyQuaternion(pl.quat);
+        this._quat.setFromEuler(new THREE.Euler(t * 1.4 + i, t * 2.1 + i * 0.5, a));
+        this._scale.setScalar((0.68 + (i % 3) * 0.2) * starReveal);
+        this._mat4.compose(this._pos, this._quat, this._scale);
+        this.starBulletMesh.setMatrixAt(i, this._mat4);
+      }
+      this.starBulletMesh.instanceMatrix.needsUpdate = true;
+    }
+
     if (this.starfield) {
       this.starfield.rotation.y = t * 0.018;
     }
@@ -416,7 +528,7 @@ export class TH08AstronomicalEntombingSpell implements SpellCardInstance {
   }
 
   public getInstanceCount(): number {
-    return this.bullets.length + 3000;
+    return this.bullets.length + 900 + 14 + 3000;
   }
 
   public dispose(scene: THREE.Scene): void {
@@ -425,6 +537,8 @@ export class TH08AstronomicalEntombingSpell implements SpellCardInstance {
     this.textures.forEach((t) => t.dispose());
     scene.remove(this.root);
     this.bulletMesh = null;
+    this.starBulletMesh = null;
+    this.familiarPlanets = [];
     this.orbitRingMeshes = [];
   }
 }

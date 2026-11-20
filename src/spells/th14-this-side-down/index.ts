@@ -44,11 +44,37 @@ interface ArrowBullet {
 }
 
 /**
- * Builds a razor-sharp sculpted 3D geometric Arrowhead bullet pointing along +Z.
+ * Builds a sleek, sculpted Touhou Scale / Swept-Wing Arrowhead bullet (`矢弹 / 鳞弹`) pointing along +Z,
+ * with sharp central spine ridge, swept delta wings, and concave tail notch (replaces rough 4-sided cone!).
  */
 function createArrowBulletGeometry(): THREE.BufferGeometry {
-  const geom = new THREE.ConeGeometry(0.24, 1.15, 4);
-  geom.rotateX(Math.PI * 0.5);
+  const positions: number[] = [];
+  const tip: [number, number, number] = [0, 0, 0.68];
+  const topSpine: [number, number, number] = [0, 0.09, -0.15];
+  const botSpine: [number, number, number] = [0, -0.09, -0.15];
+  const tailNotch: [number, number, number] = [0, 0, -0.32];
+  const rightWing: [number, number, number] = [0.30, 0, -0.52];
+  const leftWing: [number, number, number] = [-0.30, 0, -0.52];
+
+  const tri = (a: [number, number, number], b: [number, number, number], c: [number, number, number]) => {
+    positions.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  };
+
+  // Top swept facets
+  tri(tip, rightWing, topSpine);
+  tri(tip, topSpine, leftWing);
+  tri(topSpine, rightWing, tailNotch);
+  tri(topSpine, tailNotch, leftWing);
+  // Bottom swept facets
+  tri(tip, botSpine, rightWing);
+  tri(tip, leftWing, botSpine);
+  tri(botSpine, tailNotch, rightWing);
+  tri(botSpine, leftWing, tailNotch);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  geom.computeBoundingSphere();
   return geom;
 }
 

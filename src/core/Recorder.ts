@@ -1,3 +1,5 @@
+import { getCaptionTheme } from '../ui/captionThemes';
+
 export interface ExportConfig {
   resolution: 'viewport' | '1920x1080' | '2560x1440' | '3840x2160';
   fps: number;
@@ -7,7 +9,7 @@ export interface ExportConfig {
 export interface RecorderHost {
   getCanvas(): HTMLCanvasElement;
   getDuration(): number;
-  getCaptionInfo(): { meta: string; title: string; gameCode: string };
+  getCaptionInfo(): { meta: string; title: string; character: string; gameCode: string };
   enterExportSize(width: number, height: number): void;
   exitExportSize(): void;
   renderAtExactTime(timeSec: number, dtSec: number): void;
@@ -33,32 +35,150 @@ function drawCaptionOverlay(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  meta: string,
-  title: string,
+  caption: { meta: string; title: string; character: string; gameCode: string },
+  time: number,
   alpha = 1,
 ): void {
   if (alpha <= 0.005) return;
+  const theme = getCaptionTheme(caption.gameCode);
   const scale = height / 1080;
+  const cx = width / 2;
+  const bottomBase = height - Math.round(40 * scale);
+  const isTimeStop = caption.gameCode === 'TH06' && time >= 2.4 && time <= 10.2;
+  const isInverted = caption.gameCode === 'TH14' && time >= 3.2 && time <= 9.2;
+  const isPetrified = caption.gameCode === 'TH20' && time >= 3.8;
+
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
 
-  const bottomMargin = Math.round(52 * scale);
+  // Soft elliptical readability scrim (stronger warm sepia scrim for sunlit TH09)
+  const scrimW = Math.round(360 * scale);
+  const scrimH = Math.round(78 * scale);
+  const scrimCy = bottomBase - Math.round(46 * scale);
+  const scrimGrad = ctx.createRadialGradient(cx, scrimCy, 0, cx, scrimCy, scrimW);
+  scrimGrad.addColorStop(0, theme.scrimColor ?? 'rgba(2, 4, 12, 0.56)');
+  scrimGrad.addColorStop(0.55, theme.scrimColor ? 'rgba(38, 18, 4, 0.36)' : 'rgba(2, 4, 12, 0.22)');
+  scrimGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.save();
+  ctx.translate(cx, scrimCy);
+  ctx.scale(1, scrimH / scrimW);
+  ctx.fillStyle = scrimGrad;
+  ctx.beginPath();
+  ctx.arc(0, 0, scrimW, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 
-  // Meta subtitle
-  ctx.font = `500 ${Math.round(16 * scale)}px "Segoe UI", "PingFang SC", sans-serif`;
-  ctx.fillStyle = 'rgba(186, 214, 255, 0.78)';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+  // Eyebrow meta + flanking ornaments
+  const metaY = bottomBase - Math.round(74 * scale);
+  const fullMeta = `${theme.ornLeft ? `${theme.ornLeft}  ` : ''}${theme.metaPrefix ?? ''}${caption.meta}${theme.metaSuffix ?? ''}${theme.ornRight ? `  ${theme.ornRight}` : ''}`;
+  ctx.font = `600 ${Math.round(14 * scale)}px ${theme.metaFont}`;
+  ctx.fillStyle = isTimeStop ? 'rgba(196, 226, 255, 0.88)' : theme.metaColor;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.94)';
   ctx.shadowBlur = 10 * scale;
-  ctx.fillText(meta.split('').join(' '), width / 2, height - bottomMargin - Math.round(44 * scale));
+  ctx.fillText(fullMeta, cx, metaY);
+
+  // Per-game themed divider rule + emblem
+  const ruleY = bottomBase - Math.round(60 * scale);
+  const ruleHalfW = Math.round((caption.gameCode === 'TH15' ? 140 : 195) * scale);
+  const grad = ctx.createLinearGradient(cx - ruleHalfW, ruleY, cx + ruleHalfW, ruleY);
+  const stops = isTimeStop
+    ? ['rgba(160,214,255,0)', 'rgba(160,214,255,0.9)', 'rgba(235,248,255,0.95)', 'rgba(160,214,255,0.9)', 'rgba(160,214,255,0)']
+    : theme.ruleGradient;
+  const denom = Math.max(1, stops.length - 1);
+  stops.forEach((col, i) => grad.addColorStop(i / denom, col));
+
+  ctx.save();
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = Math.max(1, (caption.gameCode === 'TH10' || caption.gameCode === 'TH11' || caption.gameCode === 'TH14' || caption.gameCode === 'TH16' || caption.gameCode === 'TH18' ? 2 : 1.2) * scale);
+  const emblemGap = Math.round((theme.emblem.length > 2 ? 38 : 22) * scale);
+  ctx.beginPath();
+  ctx.moveTo(cx - ruleHalfW, ruleY);
+  ctx.lineTo(cx - emblemGap, ruleY);
+  ctx.moveTo(cx + emblemGap, ruleY);
+  ctx.lineTo(cx + ruleHalfW, ruleY);
+  ctx.stroke();
+
+  ctx.font = `600 ${Math.round(13 * scale)}px ${theme.metaFont}`;
+  ctx.fillStyle = isTimeStop ? '#bfe4ff' : theme.emblemColor;
+  ctx.shadowColor = theme.titleGlow;
+  ctx.shadowBlur = 10 * scale;
+  ctx.fillText(theme.emblem, cx, ruleY + Math.round(4 * scale));
+  ctx.restore();
 
   // Main spell card title
-  ctx.font = `500 ${Math.round(40 * scale)}px "Songti SC", "Noto Serif SC", "STSong", Georgia, serif`;
-  ctx.fillStyle = 'rgba(246, 250, 255, 0.96)';
-  ctx.shadowColor = 'rgba(130, 198, 255, 0.55)';
-  ctx.shadowBlur = 20 * scale;
-  ctx.fillText(title, width / 2, height - bottomMargin);
+  const titleY = bottomBase - Math.round(20 * scale);
+  const baseFontPx =
+    caption.gameCode === 'TH07' || caption.gameCode === 'TH12' || caption.gameCode === 'TH20'
+      ? 44
+      : caption.gameCode === 'TH14' || caption.gameCode === 'TH10'
+        ? 34
+        : 40;
+  ctx.font = `${theme.titleWeight} ${Math.round(baseFontPx * scale)}px ${theme.titleFont}`;
+
+  // Optional TH17 cyber brackets
+  if (caption.gameCode === 'TH17') {
+    const metrics = ctx.measureText(caption.title);
+    const padX = Math.round(metrics.width * 0.5 + 24 * scale);
+    const topB = titleY - Math.round(34 * scale);
+    const botB = titleY + Math.round(10 * scale);
+    const arm = Math.round(11 * scale);
+    ctx.save();
+    ctx.lineWidth = Math.max(1.5, 2 * scale);
+    ctx.strokeStyle = '#44ebff';
+    ctx.beginPath();
+    ctx.moveTo(cx - padX + arm, topB);
+    ctx.lineTo(cx - padX, topB);
+    ctx.lineTo(cx - padX, botB);
+    ctx.lineTo(cx - padX + arm, botB);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffb842';
+    ctx.beginPath();
+    ctx.moveTo(cx + padX - arm, topB);
+    ctx.lineTo(cx + padX, topB);
+    ctx.lineTo(cx + padX, botB);
+    ctx.lineTo(cx + padX - arm, botB);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // TH14 chromatic glitch split + optional inverted ghost reflection
+  if (caption.gameCode === 'TH14') {
+    const split = 2.4 * scale;
+    ctx.fillStyle = 'rgba(255, 36, 88, 0.85)';
+    ctx.shadowBlur = 0;
+    ctx.fillText(caption.title, cx - split, titleY);
+    ctx.fillStyle = 'rgba(36, 228, 255, 0.85)';
+    ctx.fillText(caption.title, cx + split, titleY);
+    if (isInverted) {
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.34;
+      ctx.translate(cx, titleY + Math.round(6 * scale));
+      ctx.scale(1, -1);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fillText(caption.title, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  ctx.fillStyle = isTimeStop ? '#dff0ff' : isPetrified ? '#eae6d9' : theme.titleColor;
+  ctx.shadowColor = isTimeStop
+    ? 'rgba(154, 216, 255, 0.75)'
+    : isPetrified
+      ? 'rgba(86, 208, 178, 0.6)'
+      : theme.titleGlow;
+  ctx.shadowBlur = 18 * scale;
+  ctx.fillText(caption.title, cx, titleY);
+
+  // Character + Official English Subtitle
+  const subY = bottomBase + Math.round(4 * scale);
+  ctx.font = `400 ${Math.round(13 * scale)}px ${theme.subFont}`;
+  ctx.fillStyle = theme.subColor;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.96)';
+  ctx.shadowBlur = 10 * scale;
+  ctx.fillText(`${caption.character} · ${theme.englishSubtitle}`, cx, subY);
+
   ctx.restore();
 }
 
@@ -145,7 +265,7 @@ export class StageRecorder {
         if (config.includeCaption) {
           const cIn = Math.max(0, Math.min(1, (t - 0.35) / 1.0));
           const cOut = Math.max(0, Math.min(1, (duration - 0.2 - t) / 1.35));
-          drawCaptionOverlay(ctx, width, height, caption.meta, caption.title, cIn * cOut);
+          drawCaptionOverlay(ctx, width, height, caption, t, cIn * cOut);
         }
 
         if (frame % 15 === 0 || frame === totalFrames - 1) {
@@ -237,7 +357,7 @@ export class StageRecorder {
         if (config.includeCaption) {
           const cIn = Math.max(0, Math.min(1, (t - 0.35) / 1.0));
           const cOut = Math.max(0, Math.min(1, (duration - 0.2 - t) / 1.35));
-          drawCaptionOverlay(ctx, width, height, caption.meta, caption.title, cIn * cOut);
+          drawCaptionOverlay(ctx, width, height, caption, t, cIn * cOut);
         }
 
         const blob = await new Promise<Blob | null>((resolve) =>

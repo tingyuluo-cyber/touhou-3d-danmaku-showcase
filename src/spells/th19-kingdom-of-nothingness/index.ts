@@ -153,8 +153,9 @@ export class TH19KingdomOfNothingnessSpell implements SpellCardInstance {
     const count = 6400;
     this.needles = [];
 
-    const needleGeom = new THREE.OctahedronGeometry(0.32, 0);
-    needleGeom.scale(0.32, 0.32, 2.8);
+    // Sleek 8-facet tapered lancet needle (much crisper than 4-sided octahedron!)
+    const needleGeom = new THREE.ConeGeometry(0.11, 1.05, 8);
+    needleGeom.rotateX(Math.PI * 0.5);
     const needleMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,

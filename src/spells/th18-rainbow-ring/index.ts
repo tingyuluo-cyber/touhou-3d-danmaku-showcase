@@ -59,6 +59,7 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
 
   private root = new THREE.Group();
   private prismCore: THREE.Mesh | null = null;
+  private prismMat: THREE.ShaderMaterial | null = null;
   private rings: RainbowRingRig[] = [];
   private orbMesh: THREE.InstancedMesh | null = null;
   private orbs: RingOrb[] = [];
@@ -79,27 +80,63 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
     this.root = new THREE.Group();
     scene.add(this.root);
 
-    // 1. Central Crystalline Dispersion Prism
-    const prismGeom = new THREE.OctahedronGeometry(2.1, 0);
-    const prismMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      metalness: 0.96,
-      roughness: 0.08,
-      emissive: new THREE.Color(0x524894),
-      emissiveIntensity: 0.6,
+    // 1. Central Iridescent Spectral Crystal Core (glass-smooth 48x36 sphere with thin-film rainbow dispersion!)
+    const prismGeom = new THREE.SphereGeometry(1.75, 48, 36);
+    this.prismMat = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: /* glsl */ `
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        varying vec3 vPos;
+        void main() {
+          vPos = position;
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vNormal = normalize(normalMatrix * normal);
+          vViewDir = normalize(-mvPos.xyz);
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uTime;
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        varying vec3 vPos;
+        vec3 spectrum(float t) {
+          return 0.55 + 0.45 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
+        }
+        void main() {
+          float ndv = clamp(abs(dot(normalize(vNormal), normalize(vViewDir))), 0.0, 1.0);
+          float fres = 1.0 - ndv;
+          float hue = fract(fres * 1.4 + vPos.y * 0.18 + uTime * 0.22);
+          vec3 irid = spectrum(hue);
+          vec3 darkCore = vec3(0.05, 0.04, 0.12);
+          vec3 col = mix(darkCore, irid * 1.25, 0.22 + fres * fres * 1.15);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `,
     });
-    this.prismCore = new THREE.Mesh(prismGeom, prismMat);
+    this.prismCore = new THREE.Mesh(prismGeom, this.prismMat);
     this.root.add(this.prismCore);
     this.geometries.push(prismGeom);
-    this.materials.push(prismMat);
+    this.materials.push(this.prismMat);
 
-    // 2. 12 Interlocking Gyroscopic Full-Spectrum Rainbow Ribbon Rings!
-    const ringCount = 12;
+    // 2. Authentic TH18 "虹人环": 14 Interlocking 7-Color Pure Spectral Rings (Red, Orange, Yellow, Green, Cyan, Blue, Violet)!
+    const sevenRainbowHex = [
+      0xff2a54, // Red
+      0xff7e24, // Orange
+      0xffe038, // Yellow
+      0x34e884, // Green
+      0x2cd8ff, // Cyan
+      0x4078ff, // Blue
+      0xb452ff, // Violet
+    ];
+    const ringCount = 14;
     this.rings = [];
 
     for (let i = 0; i < ringCount; i++) {
-      const radius = 5.4 + i * 1.45;
-      const torusGeom = new THREE.TorusGeometry(radius, 0.14 + (i % 3) * 0.04, 12, 128);
+      const radius = 5.0 + i * 1.32;
+      const ringCol = new THREE.Color(sevenRainbowHex[i % 7]);
+      const torusGeom = new THREE.TorusGeometry(radius, 0.11 + (i % 2) * 0.03, 14, 128);
       const ringMat = new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
@@ -108,6 +145,7 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
           uTime: { value: 0 },
           uPhase: { value: i * 0.55 },
           uOpacity: { value: 0.85 },
+          uRingColor: { value: ringCol },
         },
         vertexShader: /* glsl */ `
           varying vec2 vUv;
@@ -120,20 +158,14 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
           uniform float uTime;
           uniform float uPhase;
           uniform float uOpacity;
+          uniform vec3 uRingColor;
           varying vec2 vUv;
 
-          // Smooth spectral rainbow palette (ROYGBIV)
-          vec3 spectrum(float t) {
-            return 0.55 + 0.45 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
-          }
-
           void main() {
-            float hue = fract(vUv.x * 2.0 - uTime * 0.24 + uPhase * 0.15);
-            vec3 rainbow = spectrum(hue);
-            float pulse = 0.6 + 0.4 * sin(vUv.x * 37.699 - uTime * 4.2 + uPhase);
+            float pulse = 0.62 + 0.38 * sin(vUv.x * 37.699 - uTime * 4.2 + uPhase);
             float core = 0.72 + 0.28 * sin(vUv.y * 6.28318);
-            vec3 col = rainbow * (0.68 + pulse * 0.28);
-            gl_FragColor = vec4(col, core * uOpacity * 0.42);
+            vec3 col = uRingColor * (0.72 + pulse * 0.35);
+            gl_FragColor = vec4(col, core * uOpacity * 0.44);
           }
         `,
       });
@@ -160,29 +192,28 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
       });
     }
 
-    // 3. 4,200 Iridescent Rainbow Star-Orbs flowing along all 12 spinning rings!
+    // 3. 4,200 Smooth Bead Orbs locked to their parent ring's pure ROYGBIV spectral color (true "虹人环" bead chains!)
     const rand = createSeededRandom(20210504); // Touhou 18 UM release date seed!
     const orbCount = 4200;
     this.orbs = [];
-    const tmpCol = new THREE.Color();
 
     for (let i = 0; i < orbCount; i++) {
       const ringIdx = i % ringCount;
       const frac = Math.floor(i / ringCount) / (orbCount / ringCount);
       const angle0 = frac * Math.PI * 2;
-      tmpCol.setHSL((frac + ringIdx / ringCount) % 1.0, 0.92, 0.64);
+      const c = new THREE.Color(sevenRainbowHex[ringIdx % 7]);
       this.orbs.push({
         ringIdx,
         angle0,
-        offsetR: (rand() - 0.5) * 0.9,
-        offsetZ: (rand() - 0.5) * 0.85,
+        offsetR: (rand() - 0.5) * 0.42,
+        offsetZ: (rand() - 0.5) * 0.38,
         orbitSpeed: (ringIdx % 2 === 0 ? 1 : -1) * (0.52 + (ringIdx % 4) * 0.12),
-        scale: 0.14 + rand() * 0.18,
-        color: tmpCol.clone(),
+        scale: 0.16 + (i % 3) * 0.05,
+        color: c,
       });
     }
 
-    const orbGeom = new THREE.SphereGeometry(1.0, 10, 8);
+    const orbGeom = new THREE.SphereGeometry(1.0, 20, 14);
     const orbMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -231,15 +262,15 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
     if (this.orbMesh.instanceColor) this.orbMesh.instanceColor.needsUpdate = true;
     this.root.add(this.orbMesh);
 
-    // 4. Sweeping Camera threading cleanly inside & between the rotating rainbow ring array!
+    // 4. Sweeping Camera framing the 14-ring ROYGBIV kaleidoscope cleanly without colliding into the core!
     this.camCurve = new THREE.CatmullRomCurve3(
       [
-        new THREE.Vector3(0.0, 2.0, 26.5),
-        new THREE.Vector3(10.5, 4.6, 17.0),
-        new THREE.Vector3(6.8, -1.6, 7.6),
-        new THREE.Vector3(-4.2, 2.8, 6.4),
-        new THREE.Vector3(-12.6, 5.2, 16.5),
-        new THREE.Vector3(-3.0, 3.4, 28.0),
+        new THREE.Vector3(0.0, 2.2, 27.5),
+        new THREE.Vector3(12.8, 4.6, 19.0),
+        new THREE.Vector3(9.4, -2.0, 14.6),
+        new THREE.Vector3(-8.8, 3.2, 14.2),
+        new THREE.Vector3(-13.8, 5.2, 19.5),
+        new THREE.Vector3(-3.0, 3.4, 28.5),
       ],
       false,
       'centripetal',
@@ -262,7 +293,8 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
     ctx.cameraPose.shake = 0;
 
     if (this.prismCore) {
-      this.prismCore.rotation.set(t * 0.7, t * 1.1, t * 0.45);
+      this.prismCore.rotation.set(t * 0.55, t * 0.9, t * 0.35);
+      if (this.prismMat) this.prismMat.uniforms.uTime.value = t;
     }
 
     // Rotate gyroscopic rainbow rings and cache their world quaternions

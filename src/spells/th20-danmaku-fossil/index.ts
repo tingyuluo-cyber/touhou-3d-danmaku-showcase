@@ -45,21 +45,58 @@ interface CrystalSpec {
   scaleX: number;
   scaleZ: number;
   roll: number;
-  color: THREE.Color;
+  livingColor: THREE.Color;
+  fossilColor: THREE.Color;
 }
 
 /**
- * Builds a sculpted faceted hexagonal quartz-crystal prism with sharp pyramid tips along +Z.
- * Unshared flat bevel normals maximize golden amber/quartz specular reflections!
+ * Builds a true Double-Terminated Hexagonal Quartz Crystal Spire aligned along +Z:
+ * sleek tapered 6-sided hexagonal shaft capped with razor-sharp 6-faced pyramid points
+ * on BOTH ends (replaces blunt flat cylinders!) with crisp flat facet specular normals.
  */
 function createQuartzCrystalGeometry(): THREE.BufferGeometry {
-  const geom = new THREE.CylinderGeometry(0.16, 0.24, 1.35, 6, 1, false);
-  geom.rotateX(Math.PI * 0.5);
-  // Convert to non-indexed so every crystal facet gets razor-sharp flat specular normals!
-  const flatGeom = geom.toNonIndexed();
-  flatGeom.computeVertexNormals();
-  geom.dispose();
-  return flatGeom;
+  const positions: number[] = [];
+  const sides = 6;
+  const rShaft = 0.16;
+  const zBackTip = -0.82;
+  const zBackBase = -0.44;
+  const zFrontBase = 0.44;
+  const zFrontTip = 0.88;
+
+  const ringPts = (r: number, z: number): [number, number, number][] => {
+    const pts: [number, number, number][] = [];
+    for (let i = 0; i < sides; i++) {
+      const a = (i / sides) * Math.PI * 2;
+      pts.push([Math.cos(a) * r, Math.sin(a) * r, z]);
+    }
+    return pts;
+  };
+
+  const backRing = ringPts(rShaft * 0.92, zBackBase);
+  const frontRing = ringPts(rShaft, zFrontBase);
+  const backTip: [number, number, number] = [0, 0, zBackTip];
+  const frontTip: [number, number, number] = [0, 0, zFrontTip];
+
+  const tri = (a: [number, number, number], b: [number, number, number], c: [number, number, number]) => {
+    positions.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  };
+
+  for (let i = 0; i < sides; i++) {
+    const n = (i + 1) % sides;
+    // Front sharp crystal spire pyramid (+Z)
+    tri(frontTip, frontRing[i], frontRing[n]);
+    // Hexagonal shaft bevel quad
+    tri(frontRing[i], backRing[i], backRing[n]);
+    tri(frontRing[i], backRing[n], frontRing[n]);
+    // Rear crystal termination pyramid (-Z)
+    tri(backTip, backRing[n], backRing[i]);
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  geom.computeBoundingSphere();
+  return geom;
 }
 
 export class TH20DanmakuFossilSpell implements SpellCardInstance {
@@ -83,6 +120,7 @@ export class TH20DanmakuFossilSpell implements SpellCardInstance {
   private readonly _quat = new THREE.Quaternion();
   private readonly _scale = new THREE.Vector3();
   private readonly _mat4 = new THREE.Matrix4();
+  private readonly _col = new THREE.Color();
 
   public init(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): void {
     scene.background = new THREE.Color(0x060504);
@@ -127,25 +165,30 @@ export class TH20DanmakuFossilSpell implements SpellCardInstance {
     const totalCount = 2800;
     this.crystals = [];
 
-    // Ancient Amber-Gold, Petrified Jade-Turquoise, Quartz Ivory, Fossilized Slate
+    // Authentic TH20 "弹幕的化石": vivid living Touhou danmaku colors -> petrify into ancient amber/jade/stone fossil!
+    const livingPalette = [
+      new THREE.Color(0xff4278), // vivid danmaku crimson
+      new THREE.Color(0x42c2ff), // vivid danmaku azure
+      new THREE.Color(0xa674ff), // vivid danmaku violet
+      new THREE.Color(0x46f0b2), // vivid danmaku emerald
+    ];
     const cAmber = new THREE.Color(0xffb446);
     const cGold = new THREE.Color(0xffe096);
-    const cJade = new THREE.Color(0x58d4c4);
-    const cQuartz = new THREE.Color(0xf4ead8);
-    const cSlate = new THREE.Color(0x8a8278);
+    const cJade = new THREE.Color(0x52c4b4);
+    const cQuartz = new THREE.Color(0xe8dfd0);
+    const cSlate = new THREE.Color(0x888076);
 
-    // Layer A: Colossal 3D Logarithmic Ammonite Fossil Spiral (1,800 crystals along 6 spiral arms!)
+    // Layer A: Colossal 3D Logarithmic Ammonite Fossil Spiral (1,800 double-terminated quartz spires!)
     const ammoniteCount = 1800;
     const arms = 6;
     for (let i = 0; i < ammoniteCount; i++) {
       const armIdx = i % arms;
       const frac = Math.floor(i / arms) / (ammoniteCount / arms);
-      // Logarithmic ammonite spiral expanding gracefully in 3D space!
       const theta = frac * Math.PI * 4.6 + (armIdx / arms) * Math.PI * 2;
       const r = 1.6 + Math.pow(frac, 1.15) * 20.5;
       const y = (frac - 0.5) * 6.5 * Math.sin(theta * 0.5) + (rand() - 0.5) * 1.2;
 
-      const cPick =
+      const fossilCol =
         i % 5 === 0
           ? cJade
           : i % 3 === 0
@@ -161,23 +204,23 @@ export class TH20DanmakuFossilSpell implements SpellCardInstance {
         baseAngle: theta,
         baseY: y,
         flowSpeed: 0.42 + (1 - frac) * 0.35,
-        // Petrification wave sweeps cleanly outward from inner core -> outer rim (`3.6s -> 8.2s`)!
-        petrifyAt: 3.6 + frac * 4.4,
-        scaleX: 0.65 + (1 - frac * 0.4) * 0.65 + rand() * 0.3,
-        scaleZ: 0.9 + rand() * 1.1,
+        petrifyAt: 3.4 + frac * 4.6,
+        scaleX: 0.62 + (1 - frac * 0.4) * 0.55 + rand() * 0.24,
+        scaleZ: 0.85 + rand() * 0.95,
         roll: rand() * Math.PI * 2,
-        color: cPick.clone(),
+        livingColor: livingPalette[armIdx % livingPalette.length].clone(),
+        fossilColor: fossilCol.clone(),
       });
     }
 
-    // Layer B: Sweeping Curved Geological Strata Crystal Cliffs (1,000 crystals framing upper/lower strata!)
+    // Layer B: Sweeping Curved Geological Strata Crystal Cliffs (1,000 spires!)
     const strataCount = totalCount - ammoniteCount;
     for (let i = 0; i < strataCount; i++) {
       const band = i % 6;
       const yBand = ((band - 2.5) * 3.8) + (rand() - 0.5) * 0.9;
       const r = 9.0 + rand() * 18.0;
       const angle = rand() * Math.PI * 2;
-      const cPick = band % 3 === 0 ? cAmber : band % 3 === 1 ? cSlate : cJade;
+      const fossilCol = band % 3 === 0 ? cAmber : band % 3 === 1 ? cSlate : cJade;
 
       this.crystals.push({
         layer: 'strata',
@@ -186,24 +229,25 @@ export class TH20DanmakuFossilSpell implements SpellCardInstance {
         baseAngle: angle,
         baseY: yBand,
         flowSpeed: (band % 2 === 0 ? 1 : -1) * 0.16,
-        petrifyAt: 4.2 + (r / 27.0) * 3.8,
-        scaleX: 0.8 + rand() * 0.75,
-        scaleZ: 1.0 + rand() * 1.4,
+        petrifyAt: 4.0 + (r / 27.0) * 4.0,
+        scaleX: 0.72 + rand() * 0.62,
+        scaleZ: 0.95 + rand() * 1.1,
         roll: rand() * Math.PI * 2,
-        color: cPick.clone(),
+        livingColor: livingPalette[band % livingPalette.length].clone(),
+        fossilColor: fossilCol.clone(),
       });
     }
 
     const crystalGeom = createQuartzCrystalGeometry();
     const crystalMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      metalness: 0.42,
-      roughness: 0.14,
-      clearcoat: 0.9,
-      clearcoatRoughness: 0.12,
-      envMapIntensity: 1.45,
-      emissive: new THREE.Color(0x523210),
-      emissiveIntensity: 0.38,
+      metalness: 0.48,
+      roughness: 0.12,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      envMapIntensity: 1.5,
+      emissive: new THREE.Color(0x4a2e12),
+      emissiveIntensity: 0.34,
     });
     this.geometries.push(crystalGeom);
     this.materials.push(crystalMat);
@@ -211,7 +255,7 @@ export class TH20DanmakuFossilSpell implements SpellCardInstance {
     this.crystalMesh = new THREE.InstancedMesh(crystalGeom, crystalMat, totalCount);
     this.crystalMesh.frustumCulled = false;
     for (let i = 0; i < totalCount; i++) {
-      this.crystalMesh.setColorAt(i, this.crystals[i].color);
+      this.crystalMesh.setColorAt(i, this.crystals[i].livingColor);
     }
     if (this.crystalMesh.instanceColor) this.crystalMesh.instanceColor.needsUpdate = true;
     this.root.add(this.crystalMesh);
@@ -307,13 +351,17 @@ export class TH20DanmakuFossilSpell implements SpellCardInstance {
       this._dir.set(-Math.sin(angle), c.layer === 'ammonite' ? 0.18 : 0.35, Math.cos(angle)).normalize();
       orientForwardWithRoll(this._dir, c.roll + effectiveTime * 0.4, this._quat);
 
-      // Subtle crystal growth burst right as it crystallizes into eternal amber stone!
-      const crystalizePop = 1.0 + localStop * 0.18;
+      // Subtle crystal growth pop + visible living-danmaku -> amber-stone petrification color transition!
+      const crystalizePop = 1.0 + localStop * 0.16;
       this._scale.set(c.scaleX * crystalizePop, c.scaleX * crystalizePop, c.scaleZ * crystalizePop);
       this._mat4.compose(this._pos, this._quat, this._scale);
       this.crystalMesh.setMatrixAt(i, this._mat4);
+
+      this._col.copy(c.livingColor).lerp(c.fossilColor, localStop);
+      this.crystalMesh.setColorAt(i, this._col);
     }
     this.crystalMesh.instanceMatrix.needsUpdate = true;
+    if (this.crystalMesh.instanceColor) this.crystalMesh.instanceColor.needsUpdate = true;
 
     const fx = ctx.postFX;
     fx.vignette = 0.38;

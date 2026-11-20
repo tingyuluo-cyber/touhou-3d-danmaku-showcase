@@ -4,6 +4,7 @@ import { StageRecorder, type ExportConfig } from '../core/Recorder';
 import { SPELL_REGISTRY, createSpellById, getImplementedSpellIds } from '../spells/registry';
 import { smootherstep } from '../prototypes/DanmakuMath';
 import type { SpellCardInstance } from '../spells/types';
+import { getCaptionTheme } from './captionThemes';
 
 export class DirectorOverlay {
   private readonly engine: DanmakuEngine;
@@ -11,8 +12,14 @@ export class DirectorOverlay {
 
   private readonly hudEl = document.getElementById('director-hud')!;
   private readonly captionEl = document.getElementById('cinema-caption')!;
+  private readonly captionOrnLeftEl = document.getElementById('caption-orn-left')!;
+  private readonly captionOrnRightEl = document.getElementById('caption-orn-right')!;
   private readonly captionMetaEl = document.getElementById('caption-meta')!;
+  private readonly captionRuleEl = document.getElementById('caption-rule')!;
+  private readonly captionEmblemEl = document.getElementById('caption-emblem')!;
+  private readonly captionTitleWrapEl = document.getElementById('caption-title-wrap')!;
   private readonly captionTitleEl = document.getElementById('caption-title')!;
+  private readonly captionSubEl = document.getElementById('caption-sub')!;
   private readonly restoreHintEl = document.getElementById('hud-restore-hint')!;
 
   private readonly spellSelect = document.getElementById('spell-select') as HTMLSelectElement;
@@ -73,9 +80,21 @@ export class DirectorOverlay {
 
   public onSpellLoaded(spell: SpellCardInstance): void {
     const m = spell.metadata;
+    const theme = getCaptionTheme(m.gameCode);
     this.spellSelect.value = m.id;
-    this.captionMetaEl.textContent = `${m.gameCode} · ${m.gameName}`;
+    this.captionEl.dataset.game = m.gameCode;
+    this.captionEl.classList.remove('is-timestop', 'is-burst', 'is-inverted', 'is-petrified', 'is-climax');
+    this.captionOrnLeftEl.textContent = theme.ornLeft ?? '';
+    this.captionOrnRightEl.textContent = theme.ornRight ?? '';
+    this.captionMetaEl.textContent = `${theme.metaPrefix ?? ''}${m.gameCode} · ${m.gameName}${theme.metaSuffix ?? ''}`;
+    this.captionEmblemEl.textContent = theme.emblem;
     this.captionTitleEl.textContent = m.spellName;
+    this.captionTitleEl.setAttribute('data-text', m.spellName);
+    this.captionSubEl.textContent = `${m.character} · ${theme.englishSubtitle}`;
+    this.captionTitleWrapEl.style.transform = '';
+    this.captionTitleWrapEl.style.filter = '';
+    this.captionTitleWrapEl.style.clipPath = '';
+    this.captionRuleEl.style.transform = '';
     this.audioCanonHint.textContent = `对应原曲: ${m.bgm}`;
     this.timelineSlider.max = String(spell.duration);
     this.buildPhaseControls(spell);
@@ -442,11 +461,22 @@ export class DirectorOverlay {
       }
       this.timeReadout.textContent = `${tl.time.toFixed(2).padStart(5, '0')} / ${tl.duration.toFixed(2)}s`;
 
-      // Smooth caption fade synced to the global cinema transition curtain
+      // Smooth per-game caption presentation synced to the global cinema transition curtain
       if (this.captionVisible) {
-        const cIn = smootherstep(0.35, 1.35, tl.time);
-        const cOut = 1.0 - smootherstep(Math.max(1.4, tl.duration - 1.55), Math.max(1.5, tl.duration - 0.2), tl.time);
+        const code = this.engine.getCurrentSpell()?.metadata.gameCode ?? 'TH06';
+        const cIn =
+          code === 'TH15'
+            ? Math.max(0, Math.min(1, (tl.time - 0.35) / 0.85))
+            : smootherstep(0.35, 1.38, tl.time);
+        const cOut =
+          1.0 -
+          smootherstep(
+            Math.max(1.4, tl.duration - 1.55),
+            Math.max(1.5, tl.duration - 0.2),
+            tl.time,
+          );
         this.captionEl.style.opacity = (cIn * cOut).toFixed(3);
+        this.updateCaptionPresentation(code, tl.time, cIn, cOut);
       } else {
         this.captionEl.style.opacity = '0';
       }
@@ -463,6 +493,106 @@ export class DirectorOverlay {
       }
     };
     this.uiRafId = requestAnimationFrame(tick);
+  }
+
+  private updateCaptionPresentation(
+    code: string,
+    time: number,
+    cIn: number,
+    cOut: number,
+  ): void {
+    const enterRemain = 1 - cIn;
+    const ruleScale = Math.max(0.05, cIn * (0.4 + 0.6 * cOut));
+    this.captionRuleEl.style.transform = `scaleX(${ruleScale.toFixed(3)})`;
+
+    let titleTransform = '';
+    let titleFilter = '';
+    let titleClip = '';
+
+    // Reset reactive state classes cleanly per game
+    this.captionEl.classList.toggle('is-timestop', code === 'TH06' && time >= 2.4 && time <= 10.2);
+    this.captionEl.classList.toggle('is-burst', code === 'TH06' && time > 10.2 && time < 11.7);
+    this.captionEl.classList.toggle('is-climax', code === 'TH11' && time >= 7.4 && time <= 11.8);
+    this.captionEl.classList.toggle('is-inverted', code === 'TH14' && time >= 3.2 && time <= 9.2);
+    this.captionEl.classList.toggle('is-petrified', code === 'TH20' && time >= 3.8);
+
+    switch (code) {
+      case 'TH06':
+        // Horological crisp settle
+        titleTransform = `translateY(${(enterRemain * 7).toFixed(2)}px)`;
+        break;
+      case 'TH07':
+        // Dreamy sakura condensation from soft mist
+        titleFilter = enterRemain > 0.01 || cOut < 0.99 ? `blur(${((enterRemain + (1 - cOut) * 0.8) * 4.5).toFixed(2)}px)` : '';
+        titleTransform = `translateY(${(enterRemain * 10).toFixed(2)}px)`;
+        break;
+      case 'TH08':
+        // Celestial eclipse horizontal unveil
+        if (enterRemain > 0.005) {
+          const inset = (enterRemain * 42).toFixed(2);
+          titleClip = `inset(0 ${inset}% 0 ${inset}%)`;
+        }
+        break;
+      case 'TH09':
+        // Botanical sunlit rising unfurl
+        titleTransform = `translateY(${(enterRemain * 14).toFixed(2)}px) scale(${(0.96 + 0.04 * cIn).toFixed(3)})`;
+        break;
+      case 'TH10':
+        // Authoritative Shinto shrine seal stamp settle
+        titleTransform = `scale(${(1 + enterRemain * 0.085).toFixed(3)})`;
+        break;
+      case 'TH11':
+        // Reactor ignition lock-in
+        titleTransform = `scale(${(0.95 + 0.05 * cIn).toFixed(3)})`;
+        break;
+      case 'TH12':
+        // Sacred Buddhist scroll symmetrical unfurl
+        if (enterRemain > 0.005) {
+          const inset = (enterRemain * 48).toFixed(2);
+          titleClip = `inset(0 ${inset}% 0 ${inset}%)`;
+        }
+        break;
+      case 'TH13':
+        // Imperial decree elevation
+        titleTransform = `translateY(${(enterRemain * 8).toFixed(2)}px)`;
+        break;
+      case 'TH14':
+        // Signature Seija 3D gravity flip entrance!
+        if (enterRemain > 0.004) {
+          titleTransform = `perspective(680px) rotateX(${(enterRemain * 180).toFixed(2)}deg)`;
+        }
+        break;
+      case 'TH15':
+        // Absolute cold geometric stillness (no flourish)
+        break;
+      case 'TH16':
+        // Secret Backdoor vertical slit opening
+        if (enterRemain > 0.005) {
+          const inset = (enterRemain * 46).toFixed(2);
+          titleClip = `inset(0 ${inset}% 0 ${inset}%)`;
+        }
+        break;
+      case 'TH17':
+        // Cyber wireframe bracket horizontal lock-on
+        titleTransform = `scaleX(${(1 + enterRemain * 0.16).toFixed(3)})`;
+        break;
+      case 'TH18':
+        // Prismatic buoyant rise
+        titleTransform = `translateY(${(enterRemain * 10).toFixed(2)}px)`;
+        break;
+      case 'TH19':
+        // Austere quiet contraction
+        titleTransform = `scale(${(1 + enterRemain * 0.04).toFixed(3)})`;
+        break;
+      case 'TH20':
+        // Ancient monumental stele rise
+        titleTransform = `translateY(${(enterRemain * 9).toFixed(2)}px)`;
+        break;
+    }
+
+    this.captionTitleWrapEl.style.transform = titleTransform;
+    this.captionTitleWrapEl.style.filter = titleFilter;
+    this.captionTitleWrapEl.style.clipPath = titleClip;
   }
 
   public dispose(): void {

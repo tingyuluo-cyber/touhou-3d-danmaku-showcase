@@ -9,10 +9,22 @@
     <div id="app">
       <canvas id="stage-canvas"></canvas>
 
-      <!-- Minimal Cinema Spell Title (matches pure 3D showcase aesthetic) -->
-      <div id="cinema-caption" class="cinema-caption">
-        <div class="caption-meta" id="caption-meta">TH06 · 东方红魔乡</div>
-        <div class="caption-title" id="caption-title">幻世 "The World"</div>
+      <!-- Minimal Cinema Spell Title (per-game themed typography & presentation) -->
+      <div id="cinema-caption" class="cinema-caption" data-game="TH06">
+        <div class="caption-eyebrow">
+          <span class="caption-ornament left" id="caption-orn-left">XII</span>
+          <span class="caption-meta" id="caption-meta">TH06 · 东方红魔乡</span>
+          <span class="caption-ornament right" id="caption-orn-right">VI</span>
+        </div>
+        <div class="caption-rule" id="caption-rule">
+          <span class="rule-line left"></span>
+          <span class="rule-emblem" id="caption-emblem">◆</span>
+          <span class="rule-line right"></span>
+        </div>
+        <div class="caption-title-wrap" id="caption-title-wrap">
+          <div class="caption-title" id="caption-title" data-text='幻世 "The World"'>幻世 "The World"</div>
+        </div>
+        <div class="caption-sub" id="caption-sub">十六夜咲夜 · Embodiment of Scarlet Devil</div>
       </div>
 
       <!-- Toggleable Director & Export HUD (Press H to hide completely) -->

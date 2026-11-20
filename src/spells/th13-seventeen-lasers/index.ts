@@ -178,9 +178,9 @@ export class TH13SeventeenLasersSpell implements SpellCardInstance {
       });
     }
 
-    // Crisp elongated diamond crystal shard geometry along +Z
-    const shardGeom = new THREE.OctahedronGeometry(0.42, 0);
-    shardGeom.scale(0.42, 0.42, 2.35);
+    // Sleek 8-facet double-pointed sacred golden light-lance (much finer than low-poly octahedron!)
+    const shardGeom = new THREE.ConeGeometry(0.18, 1.35, 8);
+    shardGeom.rotateX(Math.PI * 0.5);
     const shardMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,

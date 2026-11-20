@@ -5,6 +5,7 @@ import { createPrismaticRibbonMaterial } from '../../prototypes/VolumetricLaserS
 import {
   clamp,
   createSeededRandom,
+  createStarBulletGeometry,
   lerp,
   smootherstep,
   smoothstep,
@@ -123,7 +124,9 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
   private root = new THREE.Group();
   private mandalaRings: THREE.Mesh[] = [];
   private ribbonMats: THREE.ShaderMaterial[] = [];
+  private wingLaserGroups: THREE.Group[] = [];
   private orbMesh: THREE.InstancedMesh | null = null;
+  private starMesh: THREE.InstancedMesh | null = null;
   private orbs: TunnelOrb[] = [];
 
   private geometries: THREE.BufferGeometry[] = [];
@@ -194,6 +197,59 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
       this.root.add(mesh);
     }
 
+    // 2b. Authentic Byakuren "魔神复诵" Signature:
+    // Symmetrical blooming CURVED RAINBOW LASER WINGS (曲线激光扇) unfurling across key mandala gates!
+    this.wingLaserGroups = [];
+    const wingColors = [0xff4c78, 0xffaa38, 0xffe452, 0x4ae898, 0x4cc4ff, 0x9c6eff];
+    const wingCurvePts = [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(3.8, 1.8, -1.2),
+      new THREE.Vector3(8.5, 4.2, 0.8),
+      new THREE.Vector3(13.2, 2.2, 3.6),
+      new THREE.Vector3(15.5, -2.5, 5.2),
+    ];
+    const wingCurve = new THREE.CatmullRomCurve3(wingCurvePts);
+    const wingGeom = new THREE.TubeGeometry(wingCurve, 36, 0.11, 6, false);
+    this.geometries.push(wingGeom);
+
+    for (let g = 0; g < 5; g++) {
+      const gateGroup = new THREE.Group();
+      gateGroup.position.set(0, 0, -6 - g * 13.5);
+      for (let side = -1; side <= 1; side += 2) {
+        for (let b = 0; b < 6; b++) {
+          const mat = createPrismaticRibbonMaterial(wingColors[b], g * 1.1 + b * 0.6);
+          this.materials.push(mat);
+          this.ribbonMats.push(mat);
+          const beam = new THREE.Mesh(wingGeom, mat);
+          beam.scale.x = side;
+          beam.rotation.z = side * (-0.55 + (b / 5) * 1.15);
+          gateGroup.add(beam);
+        }
+      }
+      this.root.add(gateGroup);
+      this.wingLaserGroups.push(gateGroup);
+    }
+
+    // 2c. 1,000 Sculpted 5-Point Glowing Star Bullets (`星弹`) weaving through Byakuren's tunnel!
+    const starGeom = createStarBulletGeometry(0.42, 0.18, 0.1);
+    const starMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.geometries.push(starGeom);
+    this.materials.push(starMat);
+    this.starMesh = new THREE.InstancedMesh(starGeom, starMat, 1000);
+    this.starMesh.frustumCulled = false;
+    const starPalette = wingColors.map((h) => new THREE.Color(h));
+    for (let i = 0; i < 1000; i++) {
+      this.starMesh.setColorAt(i, starPalette[i % starPalette.length]);
+    }
+    if (this.starMesh.instanceColor) this.starMesh.instanceColor.needsUpdate = true;
+    this.root.add(this.starMesh);
+
     // 3. 2,800 Luminous Helical Lotus-Star Orbs spiraling down the tunnel walls!
     const rand = createSeededRandom(20090815); // Touhou 12 UFO release date seed!
     const orbCount = 2800;
@@ -211,7 +267,7 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
       });
     }
 
-    const orbGeom = new THREE.SphereGeometry(1.0, 10, 8);
+    const orbGeom = new THREE.SphereGeometry(1.0, 18, 12);
     const orbMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -295,6 +351,29 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
       this.ribbonMats[i].uniforms.uOpacity.value = 0.58 + climax * 0.34;
     }
 
+    // Animate Byakuren's curved rainbow laser wings pulsing open & closed like breathing lotus wings!
+    for (let g = 0; g < this.wingLaserGroups.length; g++) {
+      const grp = this.wingLaserGroups[g];
+      const breathe = 0.72 + 0.32 * Math.sin(t * 2.2 - g * 0.85);
+      grp.scale.set(breathe, breathe, 1.0);
+      grp.rotation.z = Math.sin(t * 0.8 + g) * 0.35;
+    }
+
+    // Update 1,000 sculpted 5-point Star Bullets spiraling down the dharma tunnel
+    if (this.starMesh) {
+      for (let i = 0; i < 1000; i++) {
+        const z = 12 - ((i / 1000) * 86);
+        const a = (i * 0.47) + t * (i % 2 === 0 ? 0.65 : -0.65);
+        const r = 4.6 + (i % 5) * 1.45;
+        this._pos.set(Math.cos(a) * r, Math.sin(a) * r, z);
+        this._quat.setFromEuler(new THREE.Euler(0, 0, t * 2.4 + i));
+        this._scale.setScalar(0.58 + (i % 3) * 0.16);
+        this._mat4.compose(this._pos, this._quat, this._scale);
+        this.starMesh.setMatrixAt(i, this._mat4);
+      }
+      this.starMesh.instanceMatrix.needsUpdate = true;
+    }
+
     for (let i = 0; i < this.orbs.length; i++) {
       const o = this.orbs[i];
       const a = o.angle0 + t * o.spinRate;
@@ -316,7 +395,7 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
   }
 
   public getInstanceCount(): number {
-    return 14 + 24 + this.orbs.length;
+    return 14 + 24 + 60 + 1000 + this.orbs.length;
   }
 
   public dispose(scene: THREE.Scene): void {
@@ -326,6 +405,8 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
     scene.remove(this.root);
     this.mandalaRings = [];
     this.ribbonMats = [];
+    this.wingLaserGroups = [];
     this.orbMesh = null;
+    this.starMesh = null;
   }
 }

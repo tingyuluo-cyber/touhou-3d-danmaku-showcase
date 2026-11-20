@@ -11,6 +11,7 @@ import {
   smoothstep,
 } from '../../prototypes/DanmakuMath';
 import { createSoftGlowTexture } from '../../prototypes/MagicCircleFactory';
+import { createSakuraPetalGeometry } from '../th07-saigyouji-parinirvana/ButterflyGeometry';
 
 export const TH09_METADATA: SpellMetadata = {
   id: 'th09-flowering-gensokyo',
@@ -179,9 +180,9 @@ export class TH09FloweringGensokyoSpell implements SpellCardInstance {
       }
     }
 
-    // 3. Golden Sunflower Phyllotaxis Seed Core (600 sparkling golden orbs in exact Vogel spiral!)
+    // 3. Golden Sunflower Phyllotaxis Seed Core (600 smooth gleaming golden orbs in exact Vogel spiral!)
     const seedCount = 600;
-    const seedGeom = new THREE.SphereGeometry(0.18, 10, 8);
+    const seedGeom = new THREE.SphereGeometry(0.18, 16, 12);
     const seedMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -238,13 +239,17 @@ export class TH09FloweringGensokyoSpell implements SpellCardInstance {
       });
     }
 
-    const polGeom = new THREE.OctahedronGeometry(0.65, 1);
+    // Sculpted cupped 3D flower petals (replaces rough octahedron blobs with delicate organic petals!)
+    const polGeom = createSakuraPetalGeometry();
+    polGeom.scale(2.1, 2.1, 2.1);
     const polMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
+      vertexColors: true,
       transparent: true,
       opacity: 0.88,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      side: THREE.DoubleSide,
     });
     this.geometries.push(polGeom);
     this.materials.push(polMat);
