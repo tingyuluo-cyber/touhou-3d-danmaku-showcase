@@ -82,6 +82,10 @@ export class DirectorOverlay {
     const m = spell.metadata;
     const theme = getCaptionTheme(m.gameCode);
     this.spellSelect.value = m.id;
+
+    // Immediately zero opacity & suppress CSS transitions while swapping games so titles never bleed/overlap
+    this.captionEl.style.opacity = '0';
+    this.captionEl.classList.add('is-swapping');
     this.captionEl.dataset.game = m.gameCode;
     this.captionEl.classList.remove('is-timestop', 'is-burst', 'is-inverted', 'is-petrified', 'is-climax');
     this.captionOrnLeftEl.textContent = theme.ornLeft ?? '';
@@ -94,7 +98,13 @@ export class DirectorOverlay {
     this.captionTitleWrapEl.style.transform = '';
     this.captionTitleWrapEl.style.filter = '';
     this.captionTitleWrapEl.style.clipPath = '';
-    this.captionRuleEl.style.transform = '';
+    this.captionRuleEl.style.transform = 'scaleX(0.05)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.captionEl.classList.remove('is-swapping');
+      });
+    });
+
     this.audioCanonHint.textContent = `对应原曲: ${m.bgm}`;
     this.timelineSlider.max = String(spell.duration);
     this.buildPhaseControls(spell);
@@ -127,7 +137,8 @@ export class DirectorOverlay {
     if (ids.length <= 1) return;
     const idx = ids.indexOf(spell.metadata.id);
     const nextId = ids[(idx + 1) % ids.length];
-    this.engine.loadSpell(createSpellById(nextId));
+    const isLoopWrap = nextId === ids[0];
+    this.engine.loadSpell(createSpellById(nextId), { fromMedleyHandoff: !isLoopWrap });
     this.engine.timeline.playing = true;
   }
 
@@ -168,10 +179,7 @@ export class DirectorOverlay {
       btn.className = 'phase-chip';
       btn.textContent = `${phase.label} (${phase.start.toFixed(1)}s)`;
       btn.addEventListener('click', () => {
-        this.engine.timeline.setTime(phase.start);
-        if (!this.engine.timeline.playing) {
-          this.engine.renderAtExactTime(phase.start, 1 / 60);
-        }
+        this.engine.seekTime(phase.start);
       });
       this.phaseButtons.appendChild(btn);
       this.phaseChipEls.push(btn);
@@ -208,10 +216,7 @@ export class DirectorOverlay {
     });
     this.timelineSlider.addEventListener('input', () => {
       const val = Number(this.timelineSlider.value);
-      this.engine.timeline.setTime(val);
-      if (!this.engine.timeline.playing) {
-        this.engine.renderAtExactTime(val, 1 / 60);
-      }
+      this.engine.seekTime(val);
     });
 
     this.btnCameraMode.addEventListener('click', () => this.toggleCameraMode());
@@ -339,12 +344,10 @@ export class DirectorOverlay {
         }
       } else if (e.code === 'ArrowRight') {
         const next = Math.min(this.engine.timeline.duration, this.engine.timeline.time + 0.5);
-        this.engine.timeline.setTime(next);
-        if (!this.engine.timeline.playing) this.engine.renderAtExactTime(next, 1 / 60);
+        this.engine.seekTime(next);
       } else if (e.code === 'ArrowLeft') {
         const prev = Math.max(0, this.engine.timeline.time - 0.5);
-        this.engine.timeline.setTime(prev);
-        if (!this.engine.timeline.playing) this.engine.renderAtExactTime(prev, 1 / 60);
+        this.engine.seekTime(prev);
       }
     });
   }
@@ -353,7 +356,7 @@ export class DirectorOverlay {
     this.medleyMode = !this.medleyMode;
     this.btnMedley.textContent = this.medleyMode ? '连播: 开 (无缝总轨)' : '连播: 关';
     this.btnMedley.classList.toggle('active', this.medleyMode);
-    this.engine.audio.setMedleyMasterMode(this.medleyMode);
+    this.engine.audio.setMedleyMasterMode(this.medleyMode, this.engine.timeline.time);
   }
 
   private toggleAudioDrawer(): void {
@@ -369,7 +372,7 @@ export class DirectorOverlay {
   }
 
   private restart(): void {
-    this.engine.timeline.setTime(0);
+    this.engine.seekTime(0);
     this.engine.timeline.playing = true;
     this.btnPlay.textContent = '暂停';
   }
@@ -461,18 +464,21 @@ export class DirectorOverlay {
       }
       this.timeReadout.textContent = `${tl.time.toFixed(2).padStart(5, '0')} / ${tl.duration.toFixed(2)}s`;
 
-      // Smooth per-game caption presentation synced to the global cinema transition curtain
+      // Smooth per-game caption presentation synced strictly to global fadeEnd (zero overlap across Medley handoffs!)
       if (this.captionVisible) {
         const code = this.engine.getCurrentSpell()?.metadata.gameCode ?? 'TH06';
+        const isOverlapHandoff = this.engine.audio.isMedleyMasterActive() && code !== 'TH20';
+        const fadeEnd = isOverlapHandoff ? Math.max(2.0, tl.duration - 0.85) : tl.duration;
         const cIn =
           code === 'TH15'
-            ? Math.max(0, Math.min(1, (tl.time - 0.35) / 0.85))
-            : smootherstep(0.35, 1.38, tl.time);
+            ? Math.max(0, Math.min(1, (tl.time - 0.45) / 0.85))
+            : smootherstep(0.45, 1.48, tl.time);
+        // Reach complete opacity 0.000 a full 0.30s BEFORE the spell swaps
         const cOut =
           1.0 -
           smootherstep(
-            Math.max(1.4, tl.duration - 1.55),
-            Math.max(1.5, tl.duration - 0.2),
+            Math.max(1.5, fadeEnd - 1.55),
+            Math.max(1.6, fadeEnd - 0.3),
             tl.time,
           );
         this.captionEl.style.opacity = (cIn * cOut).toFixed(3);

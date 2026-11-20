@@ -98,11 +98,13 @@ export class AudioSyncController {
     }
   }
 
-  public setMedleyMasterMode(enabled: boolean): void {
+  public setMedleyMasterMode(enabled: boolean, currentTimelineTime = 0): void {
     if (this.medleyMasterMode === enabled) return;
     this.medleyMasterMode = enabled;
     if (this.activeSpellId) {
-      void this.loadForSpell(this.activeSpellId);
+      void this.loadForSpell(this.activeSpellId, false).then(() => {
+        this.seekToTimeline(currentTimelineTime);
+      });
     }
   }
 
@@ -110,7 +112,30 @@ export class AudioSyncController {
     return this.medleyMasterMode && this.sourceKind === 'clip' && !!this.manifestMasterUrl;
   }
 
-  public async loadForSpell(spellId: string): Promise<void> {
+  /**
+   * When Medley Master Mix is streaming uninterruptedly, returns the exact spell-local time
+   * derived directly from the hardware audio clock so 3D visuals follow audio without seeking audio!
+   */
+  public getMedleyMasterClockTime(): number | null {
+    if (!this.isMedleyMasterActive() || !this.loaded || this.audioEl.paused) {
+      return null;
+    }
+    return this.audioEl.currentTime - this.offsetSec;
+  }
+
+  /**
+   * Explicit user-initiated seek (slider scrub, phase jump, restart, manual spell select).
+   */
+  public seekToTimeline(timelineTime: number): void {
+    if (!this.loaded || this.sourceKind === 'none') return;
+    const trackDur = Number.isFinite(this.audioEl.duration) ? this.audioEl.duration : Infinity;
+    const target = Math.max(0, Math.min(trackDur - 0.05, this.offsetSec + timelineTime));
+    if (Math.abs(this.audioEl.currentTime - target) > 0.04) {
+      this.audioEl.currentTime = target;
+    }
+  }
+
+  public async loadForSpell(spellId: string, preserveMasterPlayhead = false): Promise<void> {
     this.activeSpellId = spellId;
 
     // 1. Restore cached local file if user already auditioned one for this spell (unless in Master Medley)
@@ -155,7 +180,7 @@ export class AudioSyncController {
 
       const detail = this.manifestDetails[cue.gameCode];
 
-      // Organic Master Mix mode for unbroken Medley playback (zero audio reload stutter!)
+      // Organic Master Mix mode for unbroken Medley playback (zero audio reload or seek stutter!)
       if (this.medleyMasterMode && this.manifestMasterUrl && detail?.masterStartSec !== undefined) {
         const expectedSrc = new URL(this.manifestMasterUrl, window.location.origin).href;
         this.sourceKind = 'clip';
@@ -167,7 +192,11 @@ export class AudioSyncController {
           this.loaded = false;
           this.audioEl.src = this.manifestMasterUrl;
           this.audioEl.load();
+        } else if (!preserveMasterPlayhead && this.loaded) {
+          // Manual spell jump or TH20->TH06 wrap: seek cleanly to the chosen spell's master cue
+          this.audioEl.currentTime = Math.max(0, this.offsetSec);
         }
+        // When preserveMasterPlayhead === true, NEVER touch audioEl.currentTime -> zero hiccup!
         this.emitStatus();
         return;
       }
@@ -264,10 +293,14 @@ export class AudioSyncController {
       return;
     }
 
-    // Correct drift if timeline was scrubbed or looped (wider tolerance in unbroken Master Mix mode!)
+    // In unbroken Master Mix mode, the streaming audio hardware clock IS the master clock:
+    // NEVER hard-seek audioEl while playing (prevents all audible hiccups during heavy shader init!).
     const drift = Math.abs(this.audioEl.currentTime - targetAudioTime);
-    const maxDrift = this.medleyMasterMode ? 0.35 : 0.14;
-    if (drift > maxDrift) {
+    if (this.isMedleyMasterActive()) {
+      if (this.audioEl.paused && drift > 0.12) {
+        this.audioEl.currentTime = Math.max(0, targetAudioTime);
+      }
+    } else if (drift > 0.18) {
       this.audioEl.currentTime = Math.max(0, targetAudioTime);
     }
 

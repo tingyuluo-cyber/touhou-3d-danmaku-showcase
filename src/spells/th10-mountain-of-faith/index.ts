@@ -15,41 +15,54 @@ export const TH10_METADATA: SpellMetadata = {
   id: 'th10-mountain-of-faith',
   gameCode: 'TH10',
   gameName: '东方风神录',
-  spellName: '"Mountain of Faith" / "风神之神德"',
+  spellName: '"风神之神德"',
   character: '八坂神奈子',
   bgm: '神圣庄严的古战场 ~ Suwa Foughten Field',
   prototype: 'InstancedMesh粒子系统',
-  spatialForm: '立体符札瀑布 + 交错几何山壁',
+  spatialForm: '全屏交错菱形符札网 + 纵深风暴突刺',
   visualHighlight:
-    '4,600+ 带厚度红蓝白 3D 立体符札薄片从高空斜向交错倾泻成山壁, 随音乐高潮加速发狂, 镜头从仰视山壁转为缝隙穿行.',
+    '还原原作"风神之神德"无安定点的窒息压迫: 红蓝金白 3D 立体符札以正反斜角横贯全屏交织成不断收紧的菱形弹幕墙, 配合注连绳圣环倾泻而下的高速纵深符札风暴与微操穿隙运镜, 后段进入高潮发狂加速.',
   implemented: true,
 };
 
 export const TH10_DURATION = 13.0;
 
 const TH10_PHASES: TimelinePhase[] = [
-  { id: 'cliff', label: '01 仰视符札山壁', start: 0.0, end: 3.2, badgeStyle: 'normal' },
-  { id: 'cascade', label: '02 交错瀑布倾泻', start: 3.2, end: 6.8, badgeStyle: 'frozen' },
-  { id: 'lunatic', label: '03 发狂加速穿峡', start: 6.8, end: 11.0, badgeStyle: 'burst' },
-  { id: 'summit', label: '04 神德余威', start: 11.0, end: 13.0, badgeStyle: 'normal' },
+  { id: 'summit', label: '01 御神威降临', start: 0.0, end: 3.2, badgeStyle: 'normal' },
+  { id: 'lattice', label: '02 交错符札菱网', start: 3.2, end: 6.8, badgeStyle: 'frozen' },
+  { id: 'lunatic', label: '03 风神发狂逼压', start: 6.8, end: 11.2, badgeStyle: 'burst' },
+  { id: 'aftermath', label: '04 神德余威', start: 11.2, end: 13.0, badgeStyle: 'normal' },
 ];
 
-interface TalismanSpec {
-  wallSide: number; // -1 left cliff, +1 right cliff
-  laneX: number;
+interface LatticeOfuda {
+  dirSign: number; // -1 sweeps top-right -> bottom-left; +1 sweeps top-left -> bottom-right
+  planeIdx: number; // 0..4 depth planes across Z
+  rowIdx: number;
+  colPos: number; // position along diagonal ribbon
   depthZ: number;
+  speed: number;
+  slantRad: number;
+  scale: number;
+  unlockTime: number;
+  color: THREE.Color;
+}
+
+interface StormOfuda {
+  armIdx: number;
+  armCount: number;
   cycleOffset: number;
   cycleSpan: number;
-  baseSpeed: number;
-  slantAngle: number;
+  speed: number;
+  spreadAngle: number;
+  spiralRate: number;
   scale: number;
-  color: THREE.Color;
   unlockTime: number;
+  color: THREE.Color;
 }
 
 /**
- * Generates a crisp Japanese Shinto Ofuda / Touhou Talisman card texture
- * with double framing border and vertical calligraphic spirit seal.
+ * Generates a high-contrast Japanese Shinto Ofuda / Kanako Talisman card texture
+ * with crisp colored framing border and bold calligraphic sacred seal.
  */
 function createOfudaTexture(size = 256): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -59,44 +72,44 @@ function createOfudaTexture(size = 256): THREE.CanvasTexture {
   const w = canvas.width;
   const h = canvas.height;
 
-  // Crisp luminous paper base
+  // Bright sacred paper core
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
 
-  // Colored thick outer border frame (tinted by instanceColor!)
-  ctx.strokeStyle = '#d4d8e8';
-  ctx.lineWidth = 22;
-  ctx.strokeRect(11, 11, w - 22, h - 22);
+  // Bold colored outer framing border (multiplied cleanly by instanceColor)
+  ctx.strokeStyle = '#c8d0e4';
+  ctx.lineWidth = 26;
+  ctx.strokeRect(13, 13, w - 26, h - 26);
 
-  // Inner seal rectangle
-  ctx.strokeStyle = '#8088a4';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(34, 34, w - 68, h - 68);
+  // Inner sharp seal border
+  ctx.strokeStyle = '#6c7696';
+  ctx.lineWidth = 7;
+  ctx.strokeRect(38, 38, w - 76, h - 76);
 
-  // Stylized geometric vertical talisman brush strokes down center
-  ctx.strokeStyle = '#404860';
-  ctx.lineWidth = 10;
+  // Bold calligraphic vertical spirit seal strokes
+  ctx.strokeStyle = '#2c344a';
+  ctx.lineWidth = 11;
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(w * 0.5, h * 0.14);
   ctx.lineTo(w * 0.5, h * 0.86);
   for (let i = 0; i < 5; i++) {
-    const y = h * (0.22 + i * 0.14);
-    const halfW = i % 2 === 0 ? w * 0.22 : w * 0.15;
+    const y = h * (0.24 + i * 0.13);
+    const halfW = i % 2 === 0 ? w * 0.23 : w * 0.15;
     ctx.moveTo(w * 0.5 - halfW, y);
     ctx.lineTo(w * 0.5 + halfW, y + (i % 2 === 0 ? -12 : 12));
   }
   ctx.stroke();
 
-  // Top sacred diamond emblem
+  // Top sacred diamond crest
   ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#404860';
-  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#2c344a';
+  ctx.lineWidth = 7;
   ctx.beginPath();
   ctx.moveTo(w * 0.5, h * 0.08);
-  ctx.lineTo(w * 0.62, h * 0.15);
+  ctx.lineTo(w * 0.63, h * 0.15);
   ctx.lineTo(w * 0.5, h * 0.22);
-  ctx.lineTo(w * 0.38, h * 0.15);
+  ctx.lineTo(w * 0.37, h * 0.15);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -107,6 +120,26 @@ function createOfudaTexture(size = 256): THREE.CanvasTexture {
   return tex;
 }
 
+/**
+ * Builds Kanako's iconic zigzag Shinto Shide (纸垂) paper streamer geometry.
+ */
+function createShideGeometry(): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.22, 0.0);
+  shape.lineTo(0.22, 0.0);
+  shape.lineTo(0.14, -0.58);
+  shape.lineTo(0.42, -0.78);
+  shape.lineTo(0.08, -1.35);
+  shape.lineTo(0.36, -1.58);
+  shape.lineTo(-0.08, -2.25);
+  shape.lineTo(-0.42, -1.85);
+  shape.lineTo(-0.14, -1.42);
+  shape.lineTo(-0.38, -1.02);
+  shape.lineTo(-0.12, -0.56);
+  shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false });
+}
+
 export class TH10MountainOfFaithSpell implements SpellCardInstance {
   public readonly metadata = TH10_METADATA;
   public readonly duration = TH10_DURATION;
@@ -115,212 +148,399 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
   private root = new THREE.Group();
   private talismanMesh: THREE.InstancedMesh | null = null;
   private crestRing: THREE.Mesh | null = null;
-  private talismans: TalismanSpec[] = [];
+  private shimenawaGroup: THREE.Group | null = null;
+  private shides: THREE.Mesh[] = [];
+  private latticeOfudas: LatticeOfuda[] = [];
+  private stormOfudas: StormOfuda[] = [];
 
   private geometries: THREE.BufferGeometry[] = [];
   private materials: THREE.Material[] = [];
   private textures: THREE.Texture[] = [];
 
-  private camCurve: THREE.CatmullRomCurve3 | null = null;
-  private lookCurve: THREE.CatmullRomCurve3 | null = null;
-
   private readonly _pos = new THREE.Vector3();
   private readonly _dir = new THREE.Vector3();
+  private readonly _toBullet = new THREE.Vector3();
   private readonly _quat = new THREE.Quaternion();
   private readonly _scale = new THREE.Vector3();
   private readonly _mat4 = new THREE.Matrix4();
+  private readonly _summitOrigin = new THREE.Vector3(0, 8.8, -22.0);
 
   public init(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): void {
-    scene.background = new THREE.Color(0x04060e);
-    scene.fog = new THREE.FogExp2(0x050712, 0.013);
+    scene.background = new THREE.Color(0x04050c);
+    scene.fog = new THREE.FogExp2(0x05060f, 0.014);
 
     this.root = new THREE.Group();
     scene.add(this.root);
 
-    // Dramatic shrine storm lighting catching thickness edges of the 3D talisman slabs
-    const amb = new THREE.AmbientLight(0x52648c, 0.9);
-    const keyTop = new THREE.DirectionalLight(0xeef4ff, 2.2);
-    keyTop.position.set(0, 26, 12);
-    const redGlow = new THREE.PointLight(0xff3858, 28, 56, 1.4);
-    redGlow.position.set(-14, 4, -8);
-    const blueGlow = new THREE.PointLight(0x3a9cff, 28, 56, 1.4);
-    blueGlow.position.set(14, 4, -8);
-    this.root.add(amb, keyTop, redGlow, blueGlow);
+    // High-contrast shrine storm lighting carving sharp edges on every flying Ofuda card
+    const amb = new THREE.AmbientLight(0x52628a, 0.85);
+    const keyTop = new THREE.DirectionalLight(0xf6f8ff, 2.4);
+    keyTop.position.set(0, 24, 14);
+    const crimsonRim = new THREE.PointLight(0xff304c, 36, 65, 1.35);
+    crimsonRim.position.set(-14, 6, -6);
+    const cobaltRim = new THREE.PointLight(0x2e94ff, 36, 65, 1.35);
+    cobaltRim.position.set(14, 6, -6);
+    const goldSummit = new THREE.PointLight(0xffc966, 30, 52, 1.4);
+    goldSummit.position.set(0, 11, -19);
+    this.root.add(amb, keyTop, crimsonRim, cobaltRim, goldSummit);
 
-    // 1. Towering Sacred Shinto Halo Circle high at the mountain summit
+    // 1. Kanako's Sacred Shimenawa Halo (注连绳光轮) + 4 Zigzag Shide Paper Streamers (纸垂)
+    this.shimenawaGroup = new THREE.Group();
+    this.shimenawaGroup.position.copy(this._summitOrigin);
+    this.root.add(this.shimenawaGroup);
+
+    const ropeGeom = new THREE.TorusGeometry(6.6, 0.24, 16, 96);
+    const ropeMat = new THREE.MeshStandardMaterial({
+      color: 0xe6b85c,
+      roughness: 0.42,
+      metalness: 0.35,
+      emissive: new THREE.Color(0x885214),
+      emissiveIntensity: 0.72,
+    });
+    const ropeMesh = new THREE.Mesh(ropeGeom, ropeMat);
+    this.shimenawaGroup.add(ropeMesh);
+    this.geometries.push(ropeGeom);
+    this.materials.push(ropeMat);
+
+    // Inner sacred hexagram halo
     const haloTex = createHexagramCircleTexture(512);
     this.textures.push(haloTex);
-    const crestGeom = new THREE.PlaneGeometry(26, 26);
+    const crestGeom = new THREE.PlaneGeometry(20, 20);
     const crestMat = new THREE.MeshBasicMaterial({
       map: haloTex,
-      color: 0xff9878,
+      color: 0xff8468,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.34,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
     this.crestRing = new THREE.Mesh(crestGeom, crestMat);
-    this.crestRing.position.set(0, 14.5, -24);
-    this.root.add(this.crestRing);
+    this.crestRing.position.z = -0.5;
+    this.shimenawaGroup.add(this.crestRing);
     this.geometries.push(crestGeom);
     this.materials.push(crestMat);
 
-    // 2. 4,600 Thick 3D Sculpted Ofuda Talisman Slabs cascading in crisscrossing mountain walls!
+    // 4 Crisp White Shide paper pendants hanging along the lower arc of the Shimenawa ring
+    const shideGeom = createShideGeometry();
+    const shideMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.08,
+      emissive: new THREE.Color(0xb8c8e8),
+      emissiveIntensity: 0.52,
+      side: THREE.DoubleSide,
+    });
+    this.geometries.push(shideGeom);
+    this.materials.push(shideMat);
+    this.shides = [];
+    const shideAngles = [-2.55, -2.02, -1.12, -0.59];
+    for (let i = 0; i < shideAngles.length; i++) {
+      const a = shideAngles[i];
+      const shide = new THREE.Mesh(shideGeom, shideMat);
+      shide.position.set(Math.cos(a) * 6.5, Math.sin(a) * 6.5, 0.2);
+      shide.scale.setScalar(1.05);
+      this.shimenawaGroup.add(shide);
+      this.shides.push(shide);
+    }
+
+    // 2. Four Towering Onbashira (御柱) Monumental Shrine Pillars framing the abyss
+    const pillarGeom = new THREE.CylinderGeometry(0.62, 0.78, 34, 16);
+    const pillarMat = new THREE.MeshStandardMaterial({
+      color: 0x3b2822,
+      roughness: 0.55,
+      metalness: 0.25,
+      emissive: new THREE.Color(0x281018),
+      emissiveIntensity: 0.45,
+    });
+    const bandGeom = new THREE.TorusGeometry(0.76, 0.09, 10, 28);
+    const bandMat = new THREE.MeshBasicMaterial({ color: 0xffd068 });
+    this.geometries.push(pillarGeom, bandGeom);
+    this.materials.push(pillarMat, bandMat);
+
+    const pillarSpecs: [number, number, number, number][] = [
+      [-15.5, -2.0, -18.0, 0.14],
+      [15.5, -2.0, -18.0, -0.14],
+      [-23.0, -4.0, -29.0, 0.22],
+      [23.0, -4.0, -29.0, -0.22],
+    ];
+    for (const [px, py, pz, tiltZ] of pillarSpecs) {
+      const pGroup = new THREE.Group();
+      pGroup.position.set(px, py, pz);
+      pGroup.rotation.z = tiltZ;
+      const shaft = new THREE.Mesh(pillarGeom, pillarMat);
+      pGroup.add(shaft);
+      for (const by of [-4, 4, 11]) {
+        const ring = new THREE.Mesh(bandGeom, bandMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = by;
+        pGroup.add(ring);
+      }
+      this.root.add(pGroup);
+    }
+
+    // 3. Sculpted 3D Ofuda Slabs (3,200 Full-Screen Crisscrossing Lattice + 1,400 Depth-Rush Storm)
     const ofudaTex = createOfudaTexture(256);
     this.textures.push(ofudaTex);
 
-    // Real 3D thick rectangular talisman slab aligned along +Z (facing forward, length along Z)
-    const slabGeom = new THREE.BoxGeometry(0.46, 0.065, 0.92);
+    const slabGeom = new THREE.BoxGeometry(0.42, 0.055, 0.88);
     const slabMat = new THREE.MeshStandardMaterial({
       map: ofudaTex,
       color: 0xffffff,
-      roughness: 0.28,
-      metalness: 0.22,
-      emissive: new THREE.Color(0x5a6890),
-      emissiveIntensity: 0.65,
+      roughness: 0.26,
+      metalness: 0.18,
+      emissive: new THREE.Color(0x4b587c),
+      emissiveIntensity: 0.58,
     });
     this.geometries.push(slabGeom);
     this.materials.push(slabMat);
 
-    const rand = createSeededRandom(20070817); // Touhou 10 MoF release date seed!
-    const count = 4600;
-    this.talismans = [];
+    const rand = createSeededRandom(20070817); // Touhou 10 MoF release date seed
+    const cCrimson = new THREE.Color(0xff2c4c);
+    const cCobalt = new THREE.Color(0x2a8cff);
+    const cGold = new THREE.Color(0xffbf36);
+    const cWhite = new THREE.Color(0xf4f8ff);
 
-    // Iconic Kanako Mountain of Faith palette: Vermilion Red, Sacred Cobalt Blue, Pure Ivory White
-    const cRed = new THREE.Color(0xff3854);
-    const cBlue = new THREE.Color(0x3a96ff);
-    const cWhite = new THREE.Color(0xf6f8ff);
+    // Layer A: 3,200 Full-Screen Crisscrossing Diamond Lattice Ofuda sweeping directly across x = 0!
+    // Arranged into coherent wave-rows so left-slanted & right-slanted curtains weave tight diamond pockets!
+    this.latticeOfudas = [];
+    const planeZ = [-15.5, -10.0, -4.8, 0.6, 6.2];
+    const planeUnlock = [0.0, 0.0, 2.7, 4.4, 6.4];
+    const rowsPerPlaneSide = 10;
+    const colsPerRow = 32; // 5 planes * 2 sides * 10 rows * 32 cols = 3,200
 
-    for (let i = 0; i < count; i++) {
-      const wallSide = i % 2 === 0 ? -1 : 1;
-      const tier = Math.floor(i / 2) % 6;
-      // Crisscrossing terraced canyon walls leaving a navigable center corridor (x in [-2.6, +2.6] clear!)
-      const canyonOffset = 3.2 + tier * 2.15 + (rand() - 0.5) * 1.1;
-      const depthZ = 14 - rand() * 58;
-      // Progressive Lunatic unlock: outer density layers flood in as music intensifies!
-      const unlockTime = tier < 2 ? 0.0 : tier < 4 ? 2.8 + (tier - 2) * 1.2 : 6.2 + (tier - 4) * 1.1;
+    for (let pIdx = 0; pIdx < 5; pIdx++) {
+      for (let side = 0; side < 2; side++) {
+        const dirSign = side === 0 ? 1 : -1;
+        // Distinct opposing slant angles weave crisp overlapping diamond grids!
+        const slantRad = dirSign * (0.62 + (pIdx % 3) * 0.07);
+        const baseSpeed = 9.2 + pIdx * 1.15;
 
-      const colorBand = (tier + (wallSide > 0 ? 1 : 0)) % 3;
-      const col = colorBand === 0 ? cRed : colorBand === 1 ? cBlue : cWhite;
+        for (let row = 0; row < rowsPerPlaneSide; row++) {
+          // Canonical alternating Red / Blue / Gold / White wave sheets
+          let col: THREE.Color;
+          if (pIdx < 2) {
+            col = dirSign > 0 ? cCrimson : cCobalt;
+          } else if (pIdx === 2) {
+            col = row % 2 === 0 ? cGold : cWhite;
+          } else {
+            col = dirSign > 0 ? (row % 2 === 0 ? cCrimson : cGold) : (row % 2 === 0 ? cCobalt : cWhite);
+          }
 
-      this.talismans.push({
-        wallSide,
-        laneX: wallSide * canyonOffset,
-        depthZ,
-        cycleOffset: rand() * 42,
-        cycleSpan: 42,
-        baseSpeed: 8.5 + tier * 1.15 + rand() * 1.8,
-        slantAngle: wallSide * (0.42 + (tier % 3) * 0.08),
-        scale: 0.85 + (tier % 3) * 0.14,
+          for (let c = 0; c < colsPerRow; c++) {
+            // Evenly spaced along the diagonal wave crest -> forms unmistakable crisp Touhou rows!
+            const colPos = ((c + (row % 2) * 0.5) / colsPerRow - 0.5) * 38.0;
+            this.latticeOfudas.push({
+              dirSign,
+              planeIdx: pIdx,
+              rowIdx: row,
+              colPos,
+              depthZ: planeZ[pIdx] + (rand() - 0.5) * 0.55,
+              speed: baseSpeed,
+              slantRad,
+              scale: 0.78 + (pIdx % 2) * 0.12,
+              unlockTime: planeUnlock[pIdx] + (row / rowsPerPlaneSide) * 0.45,
+              color: col.clone(),
+            });
+          }
+        }
+      }
+    }
+
+    // Layer B: 1,400 Oppressive Summit-to-Viewer Depth-Rush Ofuda firing from Kanako's Shimenawa Ring!
+    this.stormOfudas = [];
+    const stormCount = 1400;
+    const armCount = 16;
+    for (let i = 0; i < stormCount; i++) {
+      const armIdx = i % armCount;
+      const waveTier = Math.floor(i / armCount) % 3;
+      const col =
+        waveTier === 0
+          ? armIdx % 2 === 0
+            ? cCrimson
+            : cCobalt
+          : waveTier === 1
+            ? cGold
+            : cWhite;
+
+      this.stormOfudas.push({
+        armIdx,
+        armCount,
+        cycleOffset: rand() * 3.2,
+        cycleSpan: 3.2,
+        speed: 14.5 + waveTier * 3.8 + rand() * 2.0,
+        spreadAngle: 0.14 + (i % 7) * 0.068 + rand() * 0.03,
+        spiralRate: (waveTier % 2 === 0 ? 1 : -1) * (0.75 + waveTier * 0.28),
+        scale: 0.82 + (waveTier === 2 ? 0.14 : 0),
+        unlockTime: waveTier === 0 ? 2.4 : waveTier === 1 ? 5.6 : 7.0,
         color: col.clone(),
-        unlockTime,
       });
     }
 
-    this.talismanMesh = new THREE.InstancedMesh(slabGeom, slabMat, count);
+    const totalCount = this.latticeOfudas.length + this.stormOfudas.length;
+    this.talismanMesh = new THREE.InstancedMesh(slabGeom, slabMat, totalCount);
     this.talismanMesh.frustumCulled = false;
-    for (let i = 0; i < count; i++) {
-      this.talismanMesh.setColorAt(i, this.talismans[i].color);
+
+    for (let i = 0; i < this.latticeOfudas.length; i++) {
+      this.talismanMesh.setColorAt(i, this.latticeOfudas[i].color);
+    }
+    for (let j = 0; j < this.stormOfudas.length; j++) {
+      this.talismanMesh.setColorAt(this.latticeOfudas.length + j, this.stormOfudas[j].color);
     }
     if (this.talismanMesh.instanceColor) this.talismanMesh.instanceColor.needsUpdate = true;
     this.root.add(this.talismanMesh);
-
-    // 3. Signature Camera: Starts LOW looking UP at towering talisman cliffs,
-    // then levels off and plunges straight through the crisscrossing geometric canyon gap!
-    this.camCurve = new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(0.0, -7.2, 18.5),
-        new THREE.Vector3(1.2, -3.5, 11.5),
-        new THREE.Vector3(-0.8, 0.2, 2.0),
-        new THREE.Vector3(0.6, 1.4, -10.5),
-        new THREE.Vector3(0.0, 2.8, -24.0),
-      ],
-      false,
-      'centripetal',
-      0.5,
-    );
-
-    this.lookCurve = new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(0.0, 9.5, -10.0),
-        new THREE.Vector3(0.0, 5.2, -16.0),
-        new THREE.Vector3(0.0, 2.2, -26.0),
-        new THREE.Vector3(0.0, 3.0, -38.0),
-        new THREE.Vector3(0.0, 6.5, -48.0),
-      ],
-      false,
-      'centripetal',
-      0.5,
-    );
   }
 
   public update(ctx: SpellUpdateContext): void {
-    if (!this.talismanMesh || !this.camCurve || !this.lookCurve) return;
+    if (!this.talismanMesh) return;
 
     const t = ctx.time;
     const p = clamp(t / TH10_DURATION, 0, 1);
-    const u = clamp(lerp(p, smootherstep(0, 1, p), 0.25), 0, 1);
+    const u = clamp(lerp(p, smootherstep(0, 1, p), 0.2), 0, 1);
 
-    // Authentic Mountain of Faith Lunatic Escalation: integrated distance accelerates exponentially!
-    const frenzy = smoothstep(5.5, 11.5, t);
-    // Integral of speed multiplier (1.0 + 1.55 * frenzy) over time t
-    const flowPhase = t + 0.78 * Math.max(0, t - 4.8) * Math.max(0, t - 4.8) * 0.18;
+    // Authentic Mountain of Faith Lunatic Escalation ("发狂"): accelerates relentlessly into Phase 3!
+    const build = smoothstep(2.6, 6.8, t);
+    const frenzy = smoothstep(6.2, 11.2, t) * (1 - smoothstep(11.6, 12.9, t));
+    const flowTime =
+      t +
+      0.55 * Math.max(0, t - 3.0) * Math.max(0, t - 3.0) * 0.11 +
+      1.25 * Math.max(0, t - 6.2) * Math.max(0, t - 6.2) * 0.16;
 
-    this.camCurve.getPoint(u, ctx.cameraPose.position);
-    this.lookCurve.getPoint(u, ctx.cameraPose.lookAt);
-    ctx.cameraPose.roll = Math.sin(p * Math.PI * 2.5) * (0.06 + frenzy * 0.08);
-    ctx.cameraPose.fov = 52 + frenzy * 10.0;
-    ctx.cameraPose.shake = frenzy * 0.065;
+    // Active Micro-Dodging Camera: weaves & surges dynamically through shifting diamond gaps!
+    // No static safe spot feel — the viewer actively threads through closing crisscross walls!
+    const dodgeFreq = 1.35 + frenzy * 1.15;
+    const camX =
+      Math.sin(t * dodgeFreq) * (1.8 + build * 1.45) +
+      Math.cos(t * 2.15) * (0.45 + frenzy * 0.65);
+    const camY =
+      lerp(-5.6, 1.4, smootherstep(0, 0.72, u)) +
+      Math.cos(t * 1.65) * (0.65 + frenzy * 0.55);
+    const camZ = lerp(17.5, -3.5, smootherstep(0.05, 0.88, u)) + Math.sin(p * Math.PI) * 1.2;
 
+    ctx.cameraPose.position.set(camX, camY, camZ);
+    ctx.cameraPose.lookAt.set(
+      camX * 0.25,
+      lerp(5.8, 3.2, u) + Math.sin(t * 1.4) * 0.4,
+      -22.0,
+    );
+    ctx.cameraPose.roll = Math.sin(t * dodgeFreq + 0.5) * (0.05 + frenzy * 0.1);
+    ctx.cameraPose.fov = 50 + build * 5.0 + frenzy * 10.5;
+    ctx.cameraPose.shake = build * 0.02 + frenzy * 0.075;
+
+    // Animate Kanako's Shimenawa Ring & wind-whipped Shide streamers
     if (this.crestRing) {
-      this.crestRing.rotation.z = t * (0.25 + frenzy * 0.45);
-      (this.crestRing.material as THREE.MeshBasicMaterial).opacity = 0.36 + frenzy * 0.25;
+      this.crestRing.rotation.z = t * (0.35 + frenzy * 0.85);
+      (this.crestRing.material as THREE.MeshBasicMaterial).opacity = 0.28 + build * 0.18 + frenzy * 0.28;
+    }
+    for (let i = 0; i < this.shides.length; i++) {
+      this.shides[i].rotation.z = Math.sin(t * (3.2 + frenzy * 4.5) + i * 1.3) * (0.14 + frenzy * 0.24);
+      this.shides[i].rotation.x = Math.cos(t * (2.6 + frenzy * 3.6) + i) * (0.12 + frenzy * 0.2);
     }
 
-    // Update all 4,600 3D talisman slabs cascading diagonally down the crisscrossing mountain walls
-    for (let i = 0; i < this.talismans.length; i++) {
-      const s = this.talismans[i];
-      const unlocked = smoothstep(s.unlockTime, s.unlockTime + 0.85, t);
+    const camPos = ctx.cameraPose.position;
+
+    // 1. Update 3,200 Full-Screen Crisscrossing Diamond Lattice Ofuda (sweeping RIGHT across x = 0!)
+    const rowSpan = 34.0;
+    for (let i = 0; i < this.latticeOfudas.length; i++) {
+      const s = this.latticeOfudas[i];
+      const unlocked = smoothstep(s.unlockTime, s.unlockTime + 0.65, t);
       if (unlocked <= 0.002) {
         this._mat4.makeScale(0, 0, 0);
         this.talismanMesh.setMatrixAt(i, this._mat4);
         continue;
       }
 
-      const travel = (flowPhase * s.baseSpeed + s.cycleOffset) % s.cycleSpan;
-      const topY = 23.0;
-      const y = topY - travel;
-      // Diagonal slanted mountain wall slope: widens toward base, crisscrosses cleanly overhead!
-      const slopeShift = (travel / s.cycleSpan - 0.4) * Math.sin(s.slantAngle) * 9.5;
-      const x = s.laneX + slopeShift;
-      // Subtle sinusoidal curtain ripple down the waterfall
-      const z = s.depthZ + Math.sin(travel * 0.32 + i * 0.11) * 0.65;
+      // Advance perpendicular to wave crest so every row stays Razor-Coherent as a diagonal barrier!
+      const rowSpacing = rowSpan / 10;
+      const progress = (flowTime * s.speed + s.rowIdx * rowSpacing) % rowSpan;
+      const alongY = 17.5 - progress;
 
-      // Keep crisp navigable center corridor clear right around camera X so slabs never clip lens
-      const safeX = Math.abs(x) < 2.2 ? (x < 0 ? -2.2 : 2.2) : x;
+      // Oscillating cross-wind shear shifts the diamond intersections continuously -> ZERO static safe spot!
+      const windShift = Math.sin(t * (0.85 + frenzy * 0.7) + s.planeIdx * 1.2) * (1.4 + frenzy * 1.8) * s.dirSign;
+      const cosA = Math.cos(s.slantRad);
+      const sinA = Math.sin(s.slantRad);
 
-      this._pos.set(safeX, y, z);
-      this._dir.set(Math.sin(s.slantAngle) * 0.6, -1.0, 0.14 * Math.cos(travel * 0.25)).normalize();
+      // Position = diagonal crest point rotated by slantRad + downward cascade
+      const rx = s.colPos * cosA + progress * sinA * 0.85 + windShift;
+      // Wrap X smoothly inside [-21, +21] so the screen is ALWAYS densely blanketed edge-to-edge
+      const wrappedX = ((((rx + 21) % 42) + 42) % 42) - 21;
+      const ry = alongY + s.colPos * sinA * 0.42;
+      const rz = s.depthZ + Math.sin(progress * 0.25 + s.planeIdx) * 0.45;
 
-      orientForwardWithRoll(this._dir, s.wallSide * 0.45, this._quat);
-      const edgeFade = smoothstep(0, 3.5, travel) * (1 - smoothstep(s.cycleSpan - 4.0, s.cycleSpan, travel));
+      this._pos.set(wrappedX, ry, rz);
+
+      // Micro-lens deflection ONLY within 1.35u of camera eyeball -> near-miss thrills with zero clip!
+      this._toBullet.subVectors(this._pos, camPos);
+      const distSq = this._toBullet.lengthSq();
+      if (distSq < 1.82 && distSq > 1e-5) {
+        const d = Math.sqrt(distSq);
+        this._pos.addScaledVector(this._toBullet, (1.35 - d) / d);
+      }
+
+      // Direction points strictly along the diagonal slashing motion
+      this._dir.set(sinA * 0.88, -cosA, 0.08 * Math.sin(t + s.planeIdx)).normalize();
+      orientForwardWithRoll(this._dir, s.dirSign * 0.35, this._quat);
+
+      const edgeFade = smoothstep(0, 2.8, progress) * (1 - smoothstep(rowSpan - 3.2, rowSpan, progress));
       this._scale.setScalar(s.scale * unlocked * edgeFade);
       this._mat4.compose(this._pos, this._quat, this._scale);
       this.talismanMesh.setMatrixAt(i, this._mat4);
     }
+
+    // 2. Update 1,400 Oppressive Summit-to-Viewer Depth-Rush Ofuda streaming from Shimenawa Halo!
+    const baseIdx = this.latticeOfudas.length;
+    for (let j = 0; j < this.stormOfudas.length; j++) {
+      const s = this.stormOfudas[j];
+      const unlocked = smoothstep(s.unlockTime, s.unlockTime + 0.7, t);
+      if (unlocked <= 0.002) {
+        this._mat4.makeScale(0, 0, 0);
+        this.talismanMesh.setMatrixAt(baseIdx + j, this._mat4);
+        continue;
+      }
+
+      const cycle = (flowTime * (1.0 + frenzy * 0.35) + s.cycleOffset) % s.cycleSpan;
+      const travel = cycle * s.speed;
+
+      // Spiraling radial emission from Kanako's summit Shimenawa straight down & forward toward viewer!
+      const theta = (s.armIdx / s.armCount) * Math.PI * 2 + flowTime * s.spiralRate + cycle * 0.45;
+      const coneR = Math.sin(s.spreadAngle) * travel;
+      const x = this._summitOrigin.x + Math.cos(theta) * coneR;
+      const y = this._summitOrigin.y - travel * 0.34 + Math.sin(theta) * coneR * 0.65;
+      const z = this._summitOrigin.z + travel * 0.94;
+
+      this._pos.set(x, y, z);
+
+      // Deflect only right at the camera pupil so cards roar dramatically inches past both sides!
+      this._toBullet.subVectors(this._pos, camPos);
+      const distSq = this._toBullet.lengthSq();
+      if (distSq < 2.25 && distSq > 1e-5) {
+        const d = Math.sqrt(distSq);
+        this._pos.addScaledVector(this._toBullet, (1.5 - d) / d);
+      }
+
+      this._dir
+        .set(Math.cos(theta) * Math.sin(s.spreadAngle), -0.34 + Math.sin(theta) * Math.sin(s.spreadAngle) * 0.65, 0.94)
+        .normalize();
+      orientForwardWithRoll(this._dir, theta, this._quat);
+
+      const lifeFade = smoothstep(0, 0.25, cycle) * (1 - smoothstep(s.cycleSpan - 0.35, s.cycleSpan, cycle));
+      this._scale.setScalar(s.scale * unlocked * lifeFade);
+      this._mat4.compose(this._pos, this._quat, this._scale);
+      this.talismanMesh.setMatrixAt(baseIdx + j, this._mat4);
+    }
+
     this.talismanMesh.instanceMatrix.needsUpdate = true;
 
     const fx = ctx.postFX;
-    fx.vignette = 0.38;
-    fx.chromatic = 0.0014 + frenzy * 0.0024;
-    fx.bloomThreshold = 0.92;
-    fx.bloomStrength = 0.45 + frenzy * 0.15;
-    fx.bloomRadius = 0.44;
+    fx.vignette = 0.42 + frenzy * 0.08;
+    fx.chromatic = 0.0016 + frenzy * 0.003;
+    fx.bloomThreshold = 1.05;
+    fx.bloomStrength = 0.36 + frenzy * 0.16;
+    fx.bloomRadius = 0.4;
   }
 
   public getInstanceCount(): number {
-    return this.talismans.length;
+    return this.latticeOfudas.length + this.stormOfudas.length;
   }
 
   public dispose(scene: THREE.Scene): void {
@@ -329,5 +549,8 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
     this.textures.forEach((t) => t.dispose());
     scene.remove(this.root);
     this.talismanMesh = null;
+    this.crestRing = null;
+    this.shimenawaGroup = null;
+    this.shides = [];
   }
 }

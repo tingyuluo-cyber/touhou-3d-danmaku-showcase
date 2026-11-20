@@ -116,21 +116,44 @@ export class DanmakuEngine implements RecorderHost {
     window.addEventListener('resize', this.handleResize);
   }
 
-  public loadSpell(spell: SpellCardInstance): void {
+  public loadSpell(spell: SpellCardInstance, opts?: { fromMedleyHandoff?: boolean }): void {
+    const fromMedleyHandoff = !!opts?.fromMedleyHandoff;
     if (this.currentSpell) {
       this.currentSpell.dispose(this.scene);
       this.currentSpell = null;
     }
 
     this.currentSpell = spell;
-    this.currentSpell.init(this.scene, this.renderer);
     this.timeline.configure(spell.duration, spell.phases);
+    // Notify UI immediately (at time = 0) so outgoing caption snaps to opacity 0 before scene builds
+    this.callbacks.onSpellLoaded?.(spell);
+
+    this.currentSpell.init(this.scene, this.renderer);
     this.cameraDirector.setMode('cinema');
-    void this.audio.loadForSpell(spell.metadata.id);
+    void this.audio.loadForSpell(spell.metadata.id, fromMedleyHandoff);
+
+    // If seamlessly continuing the unbroken Master Mix, lock initial frame to the live audio clock
+    let initialTime = 0;
+    if (fromMedleyHandoff) {
+      const masterRel = this.audio.getMedleyMasterClockTime();
+      if (masterRel !== null && masterRel >= 0 && masterRel < spell.duration * 0.5) {
+        initialTime = masterRel;
+        this.timeline.setTime(initialTime);
+      }
+    }
 
     // Immediately evaluate frame 0 so camera and stage start crisp
-    this.evaluateAndRender(0, 1 / 60);
-    this.callbacks.onSpellLoaded?.(spell);
+    this.evaluateAndRender(initialTime, 1 / 60);
+    // Reset perf clock after synchronous shader compile so init time never spikes frame 1 dt
+    this.lastPerfTime = performance.now();
+  }
+
+  public seekTime(timeSec: number): void {
+    this.timeline.setTime(timeSec);
+    this.audio.seekToTimeline(this.timeline.time);
+    if (!this.timeline.playing) {
+      this.evaluateAndRender(this.timeline.time, 1 / 60);
+    }
   }
 
   public getCurrentSpell(): SpellCardInstance | null {
@@ -167,7 +190,21 @@ export class DanmakuEngine implements RecorderHost {
     this.lastPerfTime = now;
 
     if (!this.isExportSizing) {
-      const { delta: simDt, completed } = this.timeline.advance(realDt);
+      let { delta: simDt, completed } = this.timeline.advance(realDt);
+
+      // In unbroken Master Mix mode, let the continuous hardware audio clock drive timeline.time
+      // so all 14 spell transitions happen with ZERO audio seek stutters!
+      if (this.timeline.playing && this.currentSpell) {
+        const masterRel = this.audio.getMedleyMasterClockTime();
+        if (masterRel !== null && masterRel >= -0.05 && masterRel <= this.currentSpell.duration + 0.5) {
+          const prevT = this.timeline.time;
+          const clampedRel = Math.max(0, Math.min(this.currentSpell.duration, masterRel));
+          this.timeline.setTime(clampedRel);
+          simDt = Math.max(0.0001, clampedRel - prevT);
+          completed = clampedRel >= this.currentSpell.duration - 0.02;
+        }
+      }
+
       const masterOverlapReached =
         this.audio.isMedleyMasterActive() &&
         this.currentSpell &&

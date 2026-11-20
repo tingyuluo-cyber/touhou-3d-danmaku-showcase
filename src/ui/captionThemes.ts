@@ -45,6 +45,7 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
   TH07: {
     gameCode: 'TH07',
     englishSubtitle: 'Perfect Cherry Blossom',
+    metaSuffix: ' · 终符',
     emblem: '✿',
     ornLeft: '·',
     ornRight: '·',
@@ -101,6 +102,7 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
   TH10: {
     gameCode: 'TH10',
     englishSubtitle: 'Mountain of Faith',
+    metaSuffix: ' · 终符',
     emblem: '❖',
     ornLeft: '║',
     ornRight: '║',
@@ -119,8 +121,9 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
 
   TH11: {
     gameCode: 'TH11',
-    englishSubtitle: 'Subterranean Animism',
+    englishSubtitle: 'Subterranean Sun',
     metaPrefix: 'CAUTION // ',
+    metaSuffix: ' · 终符',
     emblem: '☢',
     ornLeft: '///',
     ornRight: '///',
@@ -232,6 +235,7 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
     gameCode: 'TH17',
     englishSubtitle: 'Wily Beast and Weakest Creature',
     metaPrefix: 'SYS.IDOL // ',
+    metaSuffix: ' · 终符',
     emblem: '△ □ ⬡',
     ornLeft: '[',
     ornRight: ']',
@@ -251,6 +255,7 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
   TH18: {
     gameCode: 'TH18',
     englishSubtitle: 'Unconnected Marketeers',
+    metaSuffix: ' · 终符',
     emblem: '◎',
     titleFont: '"Noto Sans SC Medium", "Segoe UI", "Microsoft YaHei Light", sans-serif',
     titleWeight: 500,
@@ -268,6 +273,7 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
   TH19: {
     gameCode: 'TH19',
     englishSubtitle: 'Unfinished Dream of All Living Ghost',
+    metaSuffix: ' · 终符',
     emblem: '○',
     titleFont: '"Noto Serif SC ExtraLight", "Noto Serif SC Light", "STSong", serif',
     titleWeight: 300,
@@ -285,6 +291,7 @@ export const CAPTION_THEMES: Record<string, CaptionTheme> = {
   TH20: {
     gameCode: 'TH20',
     englishSubtitle: 'Fossilized Wonders',
+    metaSuffix: ' · 终符',
     emblem: '❖',
     ornLeft: '◆',
     ornRight: '◆',

@@ -14,7 +14,7 @@ export const TH14_METADATA: SpellMetadata = {
   id: 'th14-this-side-down',
   gameCode: 'TH14',
   gameName: '东方辉针城',
-  spellName: '逆符 "天地有用" / 逆符 "天下翻覆"',
+  spellName: '逆符 "天下翻覆"',
   character: '鬼人正邪',
   bgm: '逆转的意识形态 / Reverse Ideology',
   prototype: '后期Shader特效',

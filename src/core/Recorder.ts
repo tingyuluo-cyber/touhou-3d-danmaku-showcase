@@ -112,9 +112,7 @@ function drawCaptionOverlay(
   const baseFontPx =
     caption.gameCode === 'TH07' || caption.gameCode === 'TH12' || caption.gameCode === 'TH20'
       ? 44
-      : caption.gameCode === 'TH14' || caption.gameCode === 'TH10'
-        ? 34
-        : 40;
+      : 40;
   ctx.font = `${theme.titleWeight} ${Math.round(baseFontPx * scale)}px ${theme.titleFont}`;
 
   // Optional TH17 cyber brackets

@@ -83,6 +83,14 @@ body,
   opacity: 0 !important;
 }
 
+.cinema-caption.is-swapping,
+.cinema-caption.is-swapping *,
+.cinema-caption.is-swapping *::before,
+.cinema-caption.is-swapping *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
 .caption-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -120,7 +128,7 @@ body,
   justify-content: center;
   gap: 10px;
   width: min(360px, 66vw);
-  margin: 2px 0 3px;
+  margin: 4px 0 6px;
   transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
 }
 
@@ -475,9 +483,9 @@ body,
 
 .cinema-caption[data-game='TH10'] .caption-title {
   font-family: 'STXinwei', 'STZhongsong', 'Noto Serif SC SemiBold', serif;
-  font-size: clamp(20px, 2.2vw, 31px);
+  font-size: clamp(24px, 2.75vw, 38px);
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.16em;
   color: #fffbf6;
   text-shadow:
     0 0 18px rgba(235, 68, 72, 0.62),
@@ -708,9 +716,9 @@ body,
 
 .cinema-caption[data-game='TH14'] .caption-title {
   font-family: 'Noto Sans SC Black', 'Bahnschrift SemiBold', 'Microsoft YaHei', sans-serif;
-  font-size: clamp(19px, 2.05vw, 29px);
+  font-size: clamp(22px, 2.5vw, 34px);
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   color: #ffffff;
   text-shadow:
     -2.2px 0 rgba(255, 36, 88, 0.9),
@@ -718,34 +726,35 @@ body,
     0 3px 12px rgba(0, 0, 0, 0.98);
 }
 
-/* Upside-down ghostly Seija reflection during gravity inversion */
+/* Upside-down ghostly Seija reflection during gravity inversion (clean gap above subtitle!) */
 .cinema-caption[data-game='TH14'] .caption-title::after {
   content: attr(data-text);
   position: absolute;
   left: 0;
   right: 0;
-  top: 76%;
-  transform: scaleY(-1);
+  top: 82%;
+  transform: scaleY(-0.78);
+  transform-origin: center center;
   opacity: 0;
   pointer-events: none;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.52);
   text-shadow:
     -2px 0 rgba(255, 42, 92, 0.8),
     2px 0 rgba(38, 228, 255, 0.8);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent 85%);
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent 85%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.62) 0%, transparent 58%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.62) 0%, transparent 58%);
   filter: blur(0.6px);
   transition: opacity 0.65s ease;
 }
 
 .cinema-caption[data-game='TH14'].is-inverted .caption-title::after {
-  opacity: 0.52;
+  opacity: 0.48;
 }
 
 .cinema-caption[data-game='TH14'] .caption-sub {
   font-family: 'Bahnschrift', 'Noto Sans SC', sans-serif;
   color: rgba(142, 238, 255, 0.88);
-  margin-top: 6px;
+  margin-top: 26px;
 }
 
 /* ---------- TH15: 东方绀珠传 · 纯符 "纯粹的弹幕地狱" (Stark Swiss Pure Minimalism) ---------- */

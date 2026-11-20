@@ -9,7 +9,7 @@ export const TH11_METADATA: SpellMetadata = {
   id: 'th11-subterranean-sun',
   gameCode: 'TH11',
   gameName: '东方地灵殿',
-  spellName: '"Subterranean Sun"',
+  spellName: '"地底太阳"',
   character: '灵乌路空',
   bgm: '灵知的太阳信仰 ~ Nuclear Fusion',
   prototype: '后期Shader特效',
