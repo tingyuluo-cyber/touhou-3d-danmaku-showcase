@@ -67,10 +67,10 @@ export const SPELL_AUDIO_CUES: Record<string, SpellAudioCueConfig> = {
   'th11-subterranean-sun': {
     gameCode: 'TH11',
     spellId: 'th11-subterranean-sun',
-    rawStartSec: 0.95,
+    rawStartSec: 0.0,
     durationSec: 14.0,
     bpm: 170,
-    fadeInSec: 0.7,
+    fadeInSec: 0.65,
     fadeOutSec: 1.7,
     clipUrl: '/audio/clips/TH11.mp3',
   },

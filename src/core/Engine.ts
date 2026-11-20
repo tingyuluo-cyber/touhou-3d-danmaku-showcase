@@ -168,7 +168,12 @@ export class DanmakuEngine implements RecorderHost {
 
     if (!this.isExportSizing) {
       const { delta: simDt, completed } = this.timeline.advance(realDt);
-      if (completed && this.currentSpell) {
+      const masterOverlapReached =
+        this.audio.isMedleyMasterActive() &&
+        this.currentSpell &&
+        this.currentSpell.metadata.gameCode !== 'TH20' &&
+        this.timeline.time >= this.currentSpell.duration - 0.85;
+      if ((completed || masterOverlapReached) && this.currentSpell) {
         this.callbacks.onSpellCompleted?.(this.currentSpell);
       }
       this.audio.sync(this.timeline.time, this.timeline.playing, this.timeline.speed);
@@ -206,8 +211,11 @@ export class DanmakuEngine implements RecorderHost {
 
     // Gentle global cinematic fade-in (1.2s) and lingering fade-out (1.5s) across every spell card
     const dur = this.currentSpell.duration;
-    const fadeIn = smootherstep(0.0, 1.2, time);
-    const fadeOut = 1.0 - smootherstep(Math.max(1.2, dur - 1.5), dur, time);
+    const isOverlapHandoff =
+      this.audio.isMedleyMasterActive() && this.currentSpell.metadata.gameCode !== 'TH20';
+    const fadeEnd = isOverlapHandoff ? Math.max(2.0, dur - 0.85) : dur;
+    const fadeIn = smootherstep(0.0, 1.25, time);
+    const fadeOut = 1.0 - smootherstep(Math.max(1.25, fadeEnd - 1.55), fadeEnd, time);
     this.postFX.stageFade = fadeIn * fadeOut;
 
     this.camera.getWorldPosition(this.camWorldPos);

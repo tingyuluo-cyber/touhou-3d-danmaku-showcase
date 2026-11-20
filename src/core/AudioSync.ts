@@ -40,7 +40,12 @@ export class AudioSyncController {
     { url: string; name: string; offsetSec: number }
   >();
   private manifestClips: Record<string, string> | null = null;
-  private manifestDetails: Record<string, { source: string; startSec: number; durationSec: number }> = {};
+  private manifestMasterUrl: string | null = null;
+  private manifestDetails: Record<
+    string,
+    { source: string; startSec: number; durationSec: number; masterStartSec?: number }
+  > = {};
+  private medleyMasterMode = false;
   private playAttemptPending = false;
   private readonly handleUserUnlock = (): void => {
     if (this.audioCtx?.state === 'suspended') {
@@ -93,14 +98,26 @@ export class AudioSyncController {
     }
   }
 
+  public setMedleyMasterMode(enabled: boolean): void {
+    if (this.medleyMasterMode === enabled) return;
+    this.medleyMasterMode = enabled;
+    if (this.activeSpellId) {
+      void this.loadForSpell(this.activeSpellId);
+    }
+  }
+
+  public isMedleyMasterActive(): boolean {
+    return this.medleyMasterMode && this.sourceKind === 'clip' && !!this.manifestMasterUrl;
+  }
+
   public async loadForSpell(spellId: string): Promise<void> {
     this.activeSpellId = spellId;
-    this.audioEl.pause();
-    this.loaded = false;
 
-    // 1. Restore cached local file if user already auditioned one for this spell
-    const cached = this.localTrackCache.get(spellId);
+    // 1. Restore cached local file if user already auditioned one for this spell (unless in Master Medley)
+    const cached = !this.medleyMasterMode ? this.localTrackCache.get(spellId) : undefined;
     if (cached) {
+      this.audioEl.pause();
+      this.loaded = false;
       this.sourceKind = 'local';
       this.label = cached.name;
       this.offsetSec = cached.offsetSec;
@@ -110,7 +127,7 @@ export class AudioSyncController {
       return;
     }
 
-    // 2. Otherwise check manifest.json for pre-built clips (avoids noisy 404 HEAD requests)
+    // 2. Load manifest.json once
     const cue = SPELL_AUDIO_CUES[spellId];
     if (cue) {
       if (this.manifestClips === null) {
@@ -118,9 +135,14 @@ export class AudioSyncController {
           const res = await fetch('/audio/manifest.json', { cache: 'no-store' });
           if (res.ok) {
             const data = (await res.json()) as {
+              masterMix?: string;
               clips?: Record<string, string>;
-              details?: Record<string, { source: string; startSec: number; durationSec: number }>;
+              details?: Record<
+                string,
+                { source: string; startSec: number; durationSec: number; masterStartSec?: number }
+              >;
             };
+            this.manifestMasterUrl = data.masterMix ?? null;
             this.manifestClips = data.clips ?? {};
             this.manifestDetails = data.details ?? {};
           } else {
@@ -130,9 +152,30 @@ export class AudioSyncController {
           this.manifestClips = {};
         }
       }
+
+      const detail = this.manifestDetails[cue.gameCode];
+
+      // Organic Master Mix mode for unbroken Medley playback (zero audio reload stutter!)
+      if (this.medleyMasterMode && this.manifestMasterUrl && detail?.masterStartSec !== undefined) {
+        const expectedSrc = new URL(this.manifestMasterUrl, window.location.origin).href;
+        this.sourceKind = 'clip';
+        this.label = `无缝连播总轨 · ${cue.gameCode} (${detail.source})`;
+        this.offsetSec = detail.masterStartSec;
+
+        if (this.audioEl.src !== expectedSrc) {
+          this.audioEl.pause();
+          this.loaded = false;
+          this.audioEl.src = this.manifestMasterUrl;
+          this.audioEl.load();
+        }
+        this.emitStatus();
+        return;
+      }
+
       const clipPath = this.manifestClips[cue.gameCode];
       if (clipPath) {
-        const detail = this.manifestDetails[cue.gameCode];
+        this.audioEl.pause();
+        this.loaded = false;
         this.sourceKind = 'clip';
         this.label = detail
           ? `${cue.gameCode} · ${detail.source} (截取 ${detail.startSec}s 起)`
@@ -145,6 +188,8 @@ export class AudioSyncController {
       }
     }
 
+    this.audioEl.pause();
+    this.loaded = false;
     this.sourceKind = 'none';
     this.label = '未载入 BGM (可点此载入本地原曲试听对轨)';
     this.offsetSec = cue?.rawStartSec ?? 0;
@@ -219,9 +264,10 @@ export class AudioSyncController {
       return;
     }
 
-    // Correct drift if timeline was scrubbed or looped
+    // Correct drift if timeline was scrubbed or looped (wider tolerance in unbroken Master Mix mode!)
     const drift = Math.abs(this.audioEl.currentTime - targetAudioTime);
-    if (drift > 0.14) {
+    const maxDrift = this.medleyMasterMode ? 0.35 : 0.14;
+    if (drift > maxDrift) {
       this.audioEl.currentTime = Math.max(0, targetAudioTime);
     }
 

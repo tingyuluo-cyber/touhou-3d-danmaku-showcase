@@ -4,7 +4,7 @@
   "TH08": { "startSec": 32.0, "durationSec": 12.5, "fadeIn": 0.85, "fadeOut": 1.6, "bridge": "airy" },
   "TH09": { "startSec": 75.5, "durationSec": 12.0, "fadeIn": 0.85, "fadeOut": 1.6, "bridge": "swell" },
   "TH10": { "startSec": 28.0, "durationSec": 13.0, "fadeIn": 0.8, "fadeOut": 1.65, "bridge": "rumble" },
-  "TH11": { "startSec": 0.95, "durationSec": 14.0, "fadeIn": 0.7, "fadeOut": 1.7, "bridge": "swell" },
+  "TH11": { "startSec": 0.0, "durationSec": 14.0, "fadeIn": 0.65, "fadeOut": 1.7, "bridge": "swell" },
   "TH12": { "startSec": 74.0, "durationSec": 12.5, "fadeIn": 0.85, "fadeOut": 1.6, "bridge": "chime" },
   "TH13": { "startSec": 11.0, "durationSec": 12.5, "fadeIn": 0.8, "fadeOut": 1.65, "bridge": "reverse" },
   "TH14": { "startSec": 63.5, "durationSec": 12.5, "fadeIn": 0.7, "fadeOut": 1.6, "bridge": "vacuum" },

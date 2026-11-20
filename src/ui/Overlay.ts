@@ -332,8 +332,9 @@ export class DirectorOverlay {
 
   private toggleMedley(): void {
     this.medleyMode = !this.medleyMode;
-    this.btnMedley.textContent = this.medleyMode ? '连播: 开' : '连播: 关';
+    this.btnMedley.textContent = this.medleyMode ? '连播: 开 (无缝总轨)' : '连播: 关';
     this.btnMedley.classList.toggle('active', this.medleyMode);
+    this.engine.audio.setMedleyMasterMode(this.medleyMode);
   }
 
   private toggleAudioDrawer(): void {
