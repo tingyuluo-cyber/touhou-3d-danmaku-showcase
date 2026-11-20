@@ -129,7 +129,12 @@ export class DanmakuEngine implements RecorderHost {
     this.callbacks.onSpellLoaded?.(spell);
 
     this.currentSpell.init(this.scene, this.renderer);
-    this.cameraDirector.setMode('cinema');
+    // Persist user's chosen camera mode across Medley & spell switches!
+    // In `locked` mode, snap cleanly to the new spell's curated static tripod master shot.
+    // In `free` mode, preserve the user's exact manual XYZ camera position untouched.
+    if (this.cameraDirector.mode === 'locked') {
+      this.cameraDirector.applyLockedPreset(spell.metadata.gameCode);
+    }
     void this.audio.loadForSpell(spell.metadata.id, fromMedleyHandoff);
 
     // If seamlessly continuing the unbroken Master Mix, lock initial frame to the live audio clock
@@ -174,11 +179,17 @@ export class DanmakuEngine implements RecorderHost {
   }
 
   public setCameraMode(mode: CameraMode): void {
-    this.cameraDirector.setMode(mode, this.cameraPose);
+    this.cameraDirector.setMode(mode, this.cameraPose, this.currentSpell?.metadata.gameCode);
+  }
+
+  public getCameraMode(): CameraMode {
+    return this.cameraDirector.mode;
   }
 
   public toggleCameraMode(): CameraMode {
-    const next: CameraMode = this.cameraDirector.mode === 'cinema' ? 'free' : 'cinema';
+    const order: CameraMode[] = ['cinema', 'locked', 'free'];
+    const idx = order.indexOf(this.cameraDirector.mode);
+    const next = order[(idx + 1) % order.length];
     this.setCameraMode(next);
     return next;
   }
@@ -262,7 +273,7 @@ export class DanmakuEngine implements RecorderHost {
       time,
       dt,
       duration: this.currentSpell.duration,
-      isFreeCamera: this.cameraDirector.mode === 'free',
+      isFreeCamera: this.cameraDirector.mode !== 'cinema',
       cameraPose: this.cameraPose,
       postFX: this.postFX,
       cameraWorldPosition: this.camWorldPos,

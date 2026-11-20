@@ -118,35 +118,39 @@ export class TH09FloweringGensokyoSpell implements SpellCardInstance {
     this.geometries.push(skyGeom);
     this.materials.push(skyMat);
 
+    const amb = new THREE.AmbientLight(0xffe8b4, 1.15);
+    const sunDir = new THREE.DirectionalLight(0xfff6d8, 2.2);
+    sunDir.position.set(6, 18, 12);
+    this.root.add(amb, sunDir);
+
     this.flowerRoot = new THREE.Group();
     this.root.add(this.flowerRoot);
 
     // 2. 48 Sculpted 3D Volumetric Ribbon Petals arranged in 3 concentric peeling tiers!
     const tierConfigs = [
-      { count: 16, length: 9.5, curveArch: 3.2, closedPitch: 1.28, openPitch: 0.42, delay: 1.4, colors: [0xffe066, 0xffbe42] },
-      { count: 16, length: 13.8, curveArch: 4.5, closedPitch: 1.15, openPitch: 0.08, delay: 2.8, colors: [0xff9a52, 0xff6b82] },
-      { count: 16, length: 17.5, curveArch: 5.4, closedPitch: 0.98, openPitch: -0.24, delay: 4.2, colors: [0x82e68c, 0xffd268] },
+      { count: 16, length: 9.8, curveArch: 3.2, closedPitch: 1.28, openPitch: 0.42, delay: 1.4, colors: [0xffe066, 0xffbe42] },
+      { count: 16, length: 14.0, curveArch: 4.5, closedPitch: 1.15, openPitch: 0.08, delay: 2.8, colors: [0xff9a52, 0xff6b82] },
+      { count: 16, length: 17.8, curveArch: 5.4, closedPitch: 0.98, openPitch: -0.24, delay: 4.2, colors: [0x82e68c, 0xffd268] },
     ];
 
     this.petalRigs = [];
     for (let tIdx = 0; tIdx < tierConfigs.length; tIdx++) {
       const cfg = tierConfigs[tIdx];
-      // Build arched double-ribbon petal loop (extends radially along +Z so rotating around X peels it open!)
+      // Start petals cleanly at the rim of the sunflower seed heart (z = 2.6) so center never white-outs!
       const petalPts = [
-        new THREE.Vector3(0, 0, 0.8),
-        new THREE.Vector3(cfg.length * 0.12, cfg.curveArch * 0.55, cfg.length * 0.38),
-        new THREE.Vector3(cfg.length * 0.09, cfg.curveArch * 0.45, cfg.length * 0.76),
+        new THREE.Vector3(0, 0, 2.6),
+        new THREE.Vector3(cfg.length * 0.13, cfg.curveArch * 0.55, cfg.length * 0.44),
+        new THREE.Vector3(cfg.length * 0.09, cfg.curveArch * 0.45, cfg.length * 0.78),
         new THREE.Vector3(0, 0.0, cfg.length),
-        new THREE.Vector3(-cfg.length * 0.09, cfg.curveArch * 0.45, cfg.length * 0.76),
-        new THREE.Vector3(-cfg.length * 0.12, cfg.curveArch * 0.55, cfg.length * 0.38),
-        new THREE.Vector3(0, 0, 0.8),
+        new THREE.Vector3(-cfg.length * 0.09, cfg.curveArch * 0.45, cfg.length * 0.78),
+        new THREE.Vector3(-cfg.length * 0.13, cfg.curveArch * 0.55, cfg.length * 0.44),
+        new THREE.Vector3(0, 0, 2.6),
       ];
       const petalCurve = new THREE.CatmullRomCurve3(petalPts);
-      const tubeGeom = new THREE.TubeGeometry(petalCurve, 44, 0.14 + tIdx * 0.03, 7, false);
-      // Central midrib vein beam down each petal
+      const tubeGeom = new THREE.TubeGeometry(petalCurve, 44, 0.13 + tIdx * 0.03, 7, false);
       const ribCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0, 0.8),
-        new THREE.Vector3(0, cfg.curveArch * 0.38, cfg.length * 0.52),
+        new THREE.Vector3(0, 0, 2.6),
+        new THREE.Vector3(0, cfg.curveArch * 0.38, cfg.length * 0.56),
         new THREE.Vector3(0, 0, cfg.length),
       ]);
       const ribGeom = new THREE.TubeGeometry(ribCurve, 24, 0.09, 6, false);
@@ -180,34 +184,41 @@ export class TH09FloweringGensokyoSpell implements SpellCardInstance {
       }
     }
 
-    // 3. Golden Sunflower Phyllotaxis Seed Core (600 smooth gleaming golden orbs in exact Vogel spiral!)
+    // 3. Yuuka's Golden Sunflower Phyllotaxis Seed Heart (600 sculpted amber-bronze -> sunlit-gold florets!)
+    // Rich opaque MeshStandardMaterial prevents whiteout so the Fibonacci Vogel spiral shines crisply!
     const seedCount = 600;
-    const seedGeom = new THREE.SphereGeometry(0.18, 16, 12);
-    const seedMat = new THREE.MeshBasicMaterial({
+    const seedGeom = new THREE.SphereGeometry(0.2, 16, 12);
+    const seedMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+      roughness: 0.32,
+      metalness: 0.25,
+      emissive: new THREE.Color(0x5c3008),
+      emissiveIntensity: 0.55,
     });
     this.geometries.push(seedGeom);
     this.materials.push(seedMat);
 
     this.coreSeedMesh = new THREE.InstancedMesh(seedGeom, seedMat, seedCount);
     const goldenAngle = 2.39996323;
-    const cCore = new THREE.Color(0xfff0a0);
-    const cAmber = new THREE.Color(0xff9c2e);
+    const cHeart = new THREE.Color(0x6e340c);
+    const cHoney = new THREE.Color(0xe69524);
+    const cGoldRim = new THREE.Color(0xffdf5e);
     const tmpCol = new THREE.Color();
     for (let i = 0; i < seedCount; i++) {
-      const r = Math.sqrt(i / seedCount) * 3.8;
+      const frac = Math.sqrt(i / seedCount);
+      const r = frac * 3.6;
       const a = i * goldenAngle;
-      const domeY = Math.cos((r / 3.8) * Math.PI * 0.5) * 1.1;
+      const domeY = Math.cos(frac * Math.PI * 0.5) * 1.15;
       this._pos.set(Math.cos(a) * r, domeY, Math.sin(a) * r);
       this._quat.identity();
-      this._scale.setScalar(0.65 + (1 - r / 3.8) * 0.65);
+      this._scale.setScalar(0.68 + (1 - frac) * 0.52);
       this._mat4.compose(this._pos, this._quat, this._scale);
       this.coreSeedMesh.setMatrixAt(i, this._mat4);
-      tmpCol.copy(cCore).lerp(cAmber, r / 3.8);
+      if (frac < 0.55) {
+        tmpCol.copy(cHeart).lerp(cHoney, frac / 0.55);
+      } else {
+        tmpCol.copy(cHoney).lerp(cGoldRim, (frac - 0.55) / 0.45);
+      }
       this.coreSeedMesh.setColorAt(i, tmpCol);
     }
     this.coreSeedMesh.instanceMatrix.needsUpdate = true;

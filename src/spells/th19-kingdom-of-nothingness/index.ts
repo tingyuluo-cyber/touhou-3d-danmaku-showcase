@@ -58,6 +58,7 @@ export class TH19KingdomOfNothingnessSpell implements SpellCardInstance {
   private root = new THREE.Group();
   private voidSphere: THREE.Mesh | null = null;
   private rippleRings: RippleRingRig[] = [];
+  private voidBlades: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial; baseAz: number; tilt: number }[] = [];
   private needleMesh: THREE.InstancedMesh | null = null;
   private needles: WaveNeedle[] = [];
   private planeQuats: THREE.Quaternion[] = [];
@@ -196,6 +197,59 @@ export class TH19KingdomOfNothingnessSpell implements SpellCardInstance {
     }
     if (this.needleMesh.instanceColor) this.needleMesh.instanceColor.needsUpdate = true;
     this.root.add(this.needleMesh);
+
+    // 5. Zanmu's 6 Stark Crimson & Bone-White "Forked-Crossroad" Void Slash Beams ("歧路无碍光刃")!
+    const bladeGeom = new THREE.CylinderGeometry(0.045, 0.22, 34, 10, 1, true);
+    bladeGeom.translate(0, 19.1, 0); // emerges seamlessly from the r=2.2 crimson eclipse rim!
+    this.geometries.push(bladeGeom);
+    this.voidBlades = [];
+    for (let i = 0; i < 6; i++) {
+      const isCrimson = i % 2 === 0;
+      const bMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        uniforms: {
+          uOpacity: { value: 0 },
+          uColor: { value: new THREE.Color(isCrimson ? 0xff163a : 0xf4f7ff) },
+        },
+        vertexShader: /* glsl */ `
+          varying vec2 vUv;
+          varying vec3 vNormal;
+          varying vec3 vViewDir;
+          void main() {
+            vUv = uv;
+            vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+            vNormal = normalize(normalMatrix * normal);
+            vViewDir = normalize(-mvPos.xyz);
+            gl_Position = projectionMatrix * mvPos;
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform float uOpacity;
+          uniform vec3 uColor;
+          varying vec2 vUv;
+          varying vec3 vNormal;
+          varying vec3 vViewDir;
+          void main() {
+            float ndv = clamp(abs(dot(normalize(vNormal), normalize(vViewDir))), 0.0, 1.0);
+            float core = ndv * ndv;
+            float tipFade = smoothstep(0.0, 0.1, vUv.y) * (1.0 - smoothstep(0.68, 1.0, vUv.y));
+            vec3 col = mix(uColor * 1.1, vec3(1.35, 1.35, 1.42), smoothstep(0.65, 0.96, core));
+            float alpha = (0.12 + core * 0.78) * tipFade * uOpacity;
+            if (alpha < 0.005) discard;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+      });
+      this.materials.push(bMat);
+      const mesh = new THREE.Mesh(bladeGeom, bMat);
+      const baseAz = (i / 6) * Math.PI * 2;
+      const tilt = i % 2 === 0 ? 0.24 : -0.24;
+      this.root.add(mesh);
+      this.voidBlades.push({ mesh, mat: bMat, baseAz, tilt });
+    }
   }
 
   public update(ctx: SpellUpdateContext): void {
@@ -261,17 +315,35 @@ export class TH19KingdomOfNothingnessSpell implements SpellCardInstance {
     }
     this.needleMesh.instanceMatrix.needsUpdate = true;
 
+    // Breathing obsidian eclipse core + 6 Forked-Crossroad Void Slash Beams ("歧路无碍光刃")
+    const devourAge = Math.max(0, t - 6.6);
+    const devourPulse = devourAge > 0 && devourAge < 1.8 ? Math.exp(-devourAge * 2.8) : 0;
+    if (this.voidSphere) {
+      this.voidSphere.scale.setScalar(1.0 + Math.sin(t * 2.2) * 0.04 + devourPulse * 0.36);
+    }
+
+    const bladeVis = smoothstep(2.8, 4.2, t) * (1 - smoothstep(10.8, 12.1, t));
+    for (let i = 0; i < this.voidBlades.length; i++) {
+      const vb = this.voidBlades[i];
+      const az = vb.baseAz + t * (i % 2 === 0 ? 0.16 : -0.14);
+      const el = vb.tilt + Math.sin(t * 0.7 + i) * 0.16;
+      vb.mesh.rotation.set(Math.PI * 0.5 + el, 0, az);
+      const scaleLen = 0.25 + bladeVis * 0.75 + climax * 0.25;
+      vb.mesh.scale.set(0.85 + devourPulse * 0.45, scaleLen, 0.85 + devourPulse * 0.45);
+      vb.mat.uniforms.uOpacity.value = bladeVis * (0.45 + climax * 0.38 + devourPulse * 0.25);
+    }
+
     // Stark high-contrast grading with razor-crisp tight bloom
     const fx = ctx.postFX;
     fx.vignette = 0.48;
-    fx.chromatic = 0.001;
+    fx.chromatic = 0.001 + devourPulse * 0.003;
     fx.bloomThreshold = 1.04;
-    fx.bloomStrength = 0.42;
+    fx.bloomStrength = 0.42 + devourPulse * 0.14;
     fx.bloomRadius = 0.4;
   }
 
   public getInstanceCount(): number {
-    return 16 + this.needles.length;
+    return 16 + 6 + this.needles.length;
   }
 
   public dispose(scene: THREE.Scene): void {
@@ -279,6 +351,7 @@ export class TH19KingdomOfNothingnessSpell implements SpellCardInstance {
     this.materials.forEach((m) => m.dispose());
     scene.remove(this.root);
     this.rippleRings = [];
+    this.voidBlades = [];
     this.needleMesh = null;
   }
 }

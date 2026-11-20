@@ -379,8 +379,16 @@ export class DirectorOverlay {
 
   private toggleCameraMode(): void {
     const mode = this.engine.toggleCameraMode();
-    this.btnCameraMode.textContent = mode === 'cinema' ? '运镜: 自动' : '运镜: 自由拖拽';
-    this.btnCameraMode.classList.toggle('active', mode === 'cinema');
+    if (mode === 'cinema') {
+      this.btnCameraMode.textContent = '运镜: 自动动态';
+      this.btnCameraMode.classList.add('active');
+    } else if (mode === 'locked') {
+      this.btnCameraMode.textContent = '运镜: 固定机位';
+      this.btnCameraMode.classList.add('active');
+    } else {
+      this.btnCameraMode.textContent = '运镜: 自由锁坐标';
+      this.btnCameraMode.classList.remove('active');
+    }
   }
 
   private toggleCaption(): void {

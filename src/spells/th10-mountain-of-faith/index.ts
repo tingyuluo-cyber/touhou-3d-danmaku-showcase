@@ -433,7 +433,7 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
       this.shides[i].rotation.x = Math.cos(t * (2.2 + frenzy * 2.6) + i) * (0.1 + frenzy * 0.16);
     }
 
-    const camPos = ctx.cameraPose.position;
+    const camPos = ctx.isFreeCamera ? ctx.cameraWorldPosition : ctx.cameraPose.position;
 
     // 1. Update 3,200 Full-Screen Crisscrossing Diamond Lattice Ofuda (sweeping cleanly across x = 0!)
     const rowSpan = 34.0;

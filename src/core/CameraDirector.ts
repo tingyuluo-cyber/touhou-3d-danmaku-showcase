@@ -2,7 +2,35 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { CameraPose } from '../spells/types';
 
-export type CameraMode = 'cinema' | 'free';
+export type CameraMode = 'cinema' | 'locked' | 'free';
+
+interface LockedCameraPreset {
+  position: [number, number, number];
+  lookAt: [number, number, number];
+  fov?: number;
+}
+
+/**
+ * Curated dead-steady static tripod vantage points for every mainline spell (TH06 - TH20).
+ * Used in `locked` mode so an entire 15-game Medley plays & records cleanly with zero camera movement!
+ */
+export const LOCKED_CAMERA_PRESETS: Record<string, LockedCameraPreset> = {
+  TH06: { position: [0.0, 0.8, 25.5], lookAt: [0.0, 0.0, -2.5], fov: 50 },
+  TH07: { position: [0.0, 1.4, 27.5], lookAt: [0.0, 0.4, -3.5], fov: 50 },
+  TH08: { position: [0.0, 7.5, 29.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+  TH09: { position: [0.0, 5.2, 23.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+  TH10: { position: [0.0, -2.6, 18.2], lookAt: [0.0, 4.2, -22.0], fov: 50 },
+  TH11: { position: [0.0, 3.6, 23.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+  TH12: { position: [4.6, -1.5, 16.5], lookAt: [0.0, 0.0, -28.0], fov: 54 },
+  TH13: { position: [0.0, 1.6, 25.5], lookAt: [0.0, 1.2, -5.2], fov: 50 },
+  TH14: { position: [0.0, 2.2, 23.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+  TH15: { position: [0.0, 3.8, 25.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+  TH16: { position: [0.0, 1.4, 25.5], lookAt: [0.0, 0.0, -3.5], fov: 52 },
+  TH17: { position: [0.0, 3.5, 24.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+  TH18: { position: [0.0, 0.5, 24.5], lookAt: [0.0, 0.0, -5.2], fov: 50 },
+  TH19: { position: [0.0, 8.2, 25.5], lookAt: [0.0, 0.0, 0.0], fov: 48 },
+  TH20: { position: [0.0, 5.2, 24.5], lookAt: [0.0, 0.0, 0.0], fov: 50 },
+};
 
 export class CameraDirector {
   public mode: CameraMode = 'cinema';
@@ -25,12 +53,14 @@ export class CameraDirector {
     this.controls.enabled = false;
   }
 
-  public setMode(mode: CameraMode, currentPose?: CameraPose): void {
+  public setMode(mode: CameraMode, currentPose?: CameraPose, gameCode?: string): void {
     if (this.mode === mode) return;
     this.mode = mode;
-    this.controls.enabled = mode === 'free';
-    if (mode === 'free') {
-      // Reset camera roll cleanly when handing over to free OrbitControls
+    this.controls.enabled = mode !== 'cinema';
+    if (mode === 'locked') {
+      this.applyLockedPreset(gameCode ?? 'TH06');
+    } else if (mode === 'free') {
+      // Reset camera roll cleanly when handing over to manual free OrbitControls
       this.camera.up.set(0, 1, 0);
       if (currentPose) {
         this.controls.target.copy(currentPose.lookAt);
@@ -39,8 +69,25 @@ export class CameraDirector {
     }
   }
 
+  /**
+   * Snaps the static tripod cleanly to a spell's curated panoramic master framing (zero roll/shake/drift).
+   */
+  public applyLockedPreset(gameCode: string): void {
+    const preset = LOCKED_CAMERA_PRESETS[gameCode] ?? LOCKED_CAMERA_PRESETS.TH06;
+    this.camera.up.set(0, 1, 0);
+    this.camera.position.set(...preset.position);
+    this.controls.target.set(...preset.lookAt);
+    const fov = preset.fov ?? 50;
+    if (Math.abs(this.camera.fov - fov) > 0.01) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
+    this.camera.lookAt(this.controls.target);
+    this.controls.update();
+  }
+
   public applyCinemaPose(pose: CameraPose, time: number): void {
-    if (this.mode === 'free') {
+    if (this.mode !== 'cinema') {
       this.controls.update();
       return;
     }

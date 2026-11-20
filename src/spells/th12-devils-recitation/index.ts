@@ -518,12 +518,13 @@ export class TH12DevilsRecitationSpell implements SpellCardInstance {
     ctx.cameraPose.fov = 53 + climax * 8.0 + cannonImpulse * 9.0;
     ctx.cameraPose.shake = climax * 0.03 + cannonFire * 0.045 + cannonImpulse * 0.22;
 
-    // Counter-rotating coaxial dharma rings with pulsing opacity as camera approaches each gate
+    // Counter-rotating coaxial dharma rings with pulsing opacity relative to active camera Z
+    const activeCamZ = ctx.isFreeCamera ? ctx.cameraWorldPosition.z : zTravel;
     for (let i = 0; i < this.mandalaRings.length; i++) {
       const m = this.mandalaRings[i];
       const dir = i % 2 === 0 ? 1 : -1;
       m.rotation.z = t * dir * (0.38 + (i % 3) * 0.14) + i * 0.4;
-      const dz = m.position.z - zTravel;
+      const dz = m.position.z - activeCamZ;
       const passFade = smoothstep(-0.8, -5.5, dz);
       (m.material as THREE.MeshBasicMaterial).opacity = (0.58 + climax * 0.25) * passFade;
     }

@@ -10,6 +10,7 @@ export interface RecorderHost {
   getCanvas(): HTMLCanvasElement;
   getDuration(): number;
   getCaptionInfo(): { meta: string; title: string; character: string; gameCode: string };
+  getCameraMode(): string;
   enterExportSize(width: number, height: number): void;
   exitExportSize(): void;
   renderAtExactTime(timeSec: number, dtSec: number): void;
@@ -229,7 +230,7 @@ export class StageRecorder {
     }
 
     host.setPlaying(false);
-    host.setCameraCinemaMode();
+    // Respect current camera mode (Dynamic Cinema / Locked Tripod / Free) so users can export both editions!
     host.enterExportSize(width, height);
 
     const stream = outCanvas.captureStream(config.fps);
@@ -285,7 +286,8 @@ export class StageRecorder {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${caption.gameCode}_${width}x${height}_${config.fps}fps.webm`;
+        const modeTag = host.getCameraMode() === 'cinema' ? '' : `_${host.getCameraMode()}`;
+        a.download = `${caption.gameCode}_${width}x${height}_${config.fps}fps${modeTag}.webm`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
         onProgress(`WebM 导出完成! (${(blob.size / (1024 * 1024)).toFixed(1)} MB)`);
@@ -340,7 +342,7 @@ export class StageRecorder {
     }
 
     host.setPlaying(false);
-    host.setCameraCinemaMode();
+    // Respect current camera mode (Dynamic Cinema / Locked Tripod / Free) so users can export both editions!
     host.enterExportSize(width, height);
 
     try {
