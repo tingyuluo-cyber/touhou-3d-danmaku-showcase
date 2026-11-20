@@ -312,9 +312,9 @@ export class GravityDanmaku {
     const infall = rawPhase * rawPhase * Math.sqrt(rawPhase);
     let r = b.startRadius * (1.0 - infall * 0.89);
 
-    // During Act 3 Supernova Flare, shockwave blasts bullets violently back outward!
+    // During Act 4 Supernova Detonation, concussive blast wave blows bullets violently back outward!
     if (supernovaPush > 0.001) {
-      r += supernovaPush * (18.0 + (b.startRadius - 20.0) * 0.5);
+      r += supernovaPush * (34.0 + (b.startRadius - 20.0) * 0.75);
     }
 
     // Angular momentum conservation: spins faster as radius shrinks!
@@ -382,7 +382,7 @@ export class GravityDanmaku {
       const age = Math.max(0, t - g.spawnTime);
       const r =
         Math.max(g.endR, g.startR - age * (0.9 + gravityPull * 0.9)) +
-        supernovaPush * 16.0;
+        supernovaPush * 30.0;
       const angle = age * g.orbitSpeed;
       const c = Math.cos(angle);
       const s = Math.sin(angle);

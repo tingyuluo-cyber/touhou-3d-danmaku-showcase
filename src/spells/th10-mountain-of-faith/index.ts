@@ -347,13 +347,14 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
       }
     }
 
-    // Layer B: 1,400 Oppressive Summit-to-Viewer Depth-Rush Ofuda firing from Kanako's Shimenawa Ring!
+    // Layer B: 1,400 Organized Symmetrical Summit-Fan Storm Ofuda pouring from Kanako's Shimenawa Halo!
     this.stormOfudas = [];
     const stormCount = 1400;
-    const armCount = 16;
+    const armCount = 14;
     for (let i = 0; i < stormCount; i++) {
       const armIdx = i % armCount;
       const waveTier = Math.floor(i / armCount) % 3;
+      const rankInArm = Math.floor(i / (armCount * 3));
       const col =
         waveTier === 0
           ? armIdx % 2 === 0
@@ -366,13 +367,14 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
       this.stormOfudas.push({
         armIdx,
         armCount,
-        cycleOffset: rand() * 3.2,
-        cycleSpan: 3.2,
-        speed: 14.5 + waveTier * 3.8 + rand() * 2.0,
-        spreadAngle: 0.14 + (i % 7) * 0.068 + rand() * 0.03,
-        spiralRate: (waveTier % 2 === 0 ? 1 : -1) * (0.75 + waveTier * 0.28),
-        scale: 0.82 + (waveTier === 2 ? 0.14 : 0),
-        unlockTime: waveTier === 0 ? 2.4 : waveTier === 1 ? 5.6 : 7.0,
+        // Synchronized wave rings (coherent rhythmic bursts instead of chaotic static!)
+        cycleOffset: (rankInArm / 34) * 3.4 + waveTier * 0.28,
+        cycleSpan: 3.4,
+        speed: 12.5 + waveTier * 2.6,
+        spreadAngle: 0.24 + (waveTier * 0.11) + (armIdx % 2) * 0.06,
+        spiralRate: (waveTier % 2 === 0 ? 1 : -1) * (0.42 + waveTier * 0.14),
+        scale: 0.78 + (waveTier === 2 ? 0.12 : 0),
+        unlockTime: waveTier === 0 ? 2.6 : waveTier === 1 ? 5.6 : 7.0,
         color: col.clone(),
       });
     }
@@ -398,48 +400,42 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
     const p = clamp(t / TH10_DURATION, 0, 1);
     const u = clamp(lerp(p, smootherstep(0, 1, p), 0.2), 0, 1);
 
-    // Authentic Mountain of Faith Lunatic Escalation ("发狂"): accelerates relentlessly into Phase 3!
+    // Authentic Mountain of Faith Lunatic Escalation ("发狂"): smooth relentless acceleration!
     const build = smoothstep(2.6, 6.8, t);
-    const frenzy = smoothstep(6.2, 11.2, t) * (1 - smoothstep(11.6, 12.9, t));
+    const frenzy = smoothstep(6.2, 11.0, t) * (1 - smoothstep(11.6, 12.9, t));
     const flowTime =
       t +
-      0.55 * Math.max(0, t - 3.0) * Math.max(0, t - 3.0) * 0.11 +
-      1.25 * Math.max(0, t - 6.2) * Math.max(0, t - 6.2) * 0.16;
+      0.42 * Math.max(0, t - 3.0) * Math.max(0, t - 3.0) * 0.1 +
+      0.92 * Math.max(0, t - 6.4) * Math.max(0, t - 6.4) * 0.14;
 
-    // Active Micro-Dodging Camera: weaves & surges dynamically through shifting diamond gaps!
-    // No static safe spot feel — the viewer actively threads through closing crisscross walls!
-    const dodgeFreq = 1.35 + frenzy * 1.15;
-    const camX =
-      Math.sin(t * dodgeFreq) * (1.8 + build * 1.45) +
-      Math.cos(t * 2.15) * (0.45 + frenzy * 0.65);
-    const camY =
-      lerp(-5.6, 1.4, smootherstep(0, 0.72, u)) +
-      Math.cos(t * 1.65) * (0.65 + frenzy * 0.55);
-    const camZ = lerp(17.5, -3.5, smootherstep(0.05, 0.88, u)) + Math.sin(p * Math.PI) * 1.2;
+    // Stately, Rock-Steady Camera (ZERO motion sickness!):
+    // Single silky smooth upward gaze & stately slow arc while the overwhelming bullet curtains
+    // deliver 100% of the oppressive speed & density!
+    const camX = lerp(-2.2, 2.2, smootherstep(0.0, 1.0, u));
+    const camY = lerp(-4.8, -0.6, smootherstep(0.0, 0.85, u));
+    const camZ = lerp(18.5, 9.2, smootherstep(0.0, 0.72, u)) + smoothstep(0.72, 1.0, u) * 3.8;
 
     ctx.cameraPose.position.set(camX, camY, camZ);
-    ctx.cameraPose.lookAt.set(
-      camX * 0.25,
-      lerp(5.8, 3.2, u) + Math.sin(t * 1.4) * 0.4,
-      -22.0,
-    );
-    ctx.cameraPose.roll = Math.sin(t * dodgeFreq + 0.5) * (0.05 + frenzy * 0.1);
-    ctx.cameraPose.fov = 50 + build * 5.0 + frenzy * 10.5;
-    ctx.cameraPose.shake = build * 0.02 + frenzy * 0.075;
+    ctx.cameraPose.lookAt.set(camX * 0.18, lerp(4.2, 3.6, u), -22.0);
+    // Keep horizon rock-level (ultra-subtle majestic tilt <= 0.025 rad, zero sloshing!)
+    ctx.cameraPose.roll = Math.sin(p * Math.PI) * 0.022;
+    ctx.cameraPose.fov = 48 + build * 3.5 + frenzy * 5.5;
+    // Ultra-restrained low rumble ONLY at peak frenzy transition (zero dizzy jitter)
+    ctx.cameraPose.shake = frenzy * 0.016;
 
     // Animate Kanako's Shimenawa Ring & wind-whipped Shide streamers
     if (this.crestRing) {
-      this.crestRing.rotation.z = t * (0.35 + frenzy * 0.85);
-      (this.crestRing.material as THREE.MeshBasicMaterial).opacity = 0.28 + build * 0.18 + frenzy * 0.28;
+      this.crestRing.rotation.z = t * (0.3 + frenzy * 0.65);
+      (this.crestRing.material as THREE.MeshBasicMaterial).opacity = 0.28 + build * 0.18 + frenzy * 0.26;
     }
     for (let i = 0; i < this.shides.length; i++) {
-      this.shides[i].rotation.z = Math.sin(t * (3.2 + frenzy * 4.5) + i * 1.3) * (0.14 + frenzy * 0.24);
-      this.shides[i].rotation.x = Math.cos(t * (2.6 + frenzy * 3.6) + i) * (0.12 + frenzy * 0.2);
+      this.shides[i].rotation.z = Math.sin(t * (2.6 + frenzy * 3.2) + i * 1.3) * (0.12 + frenzy * 0.18);
+      this.shides[i].rotation.x = Math.cos(t * (2.2 + frenzy * 2.6) + i) * (0.1 + frenzy * 0.16);
     }
 
     const camPos = ctx.cameraPose.position;
 
-    // 1. Update 3,200 Full-Screen Crisscrossing Diamond Lattice Ofuda (sweeping RIGHT across x = 0!)
+    // 1. Update 3,200 Full-Screen Crisscrossing Diamond Lattice Ofuda (sweeping cleanly across x = 0!)
     const rowSpan = 34.0;
     for (let i = 0; i < this.latticeOfudas.length; i++) {
       const s = this.latticeOfudas[i];
@@ -450,36 +446,33 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
         continue;
       }
 
-      // Advance perpendicular to wave crest so every row stays Razor-Coherent as a diagonal barrier!
+      // Coherent diagonal wave rows sweeping continuously across the full viewport
       const rowSpacing = rowSpan / 10;
       const progress = (flowTime * s.speed + s.rowIdx * rowSpacing) % rowSpan;
       const alongY = 17.5 - progress;
 
-      // Oscillating cross-wind shear shifts the diamond intersections continuously -> ZERO static safe spot!
-      const windShift = Math.sin(t * (0.85 + frenzy * 0.7) + s.planeIdx * 1.2) * (1.4 + frenzy * 1.8) * s.dirSign;
+      // Smooth steady cross-wind drift shifts safe pockets continuously without dizzy oscillation
+      const windShift = Math.sin(t * 0.42 + s.planeIdx * 1.1) * (1.2 + frenzy * 1.1) * s.dirSign;
       const cosA = Math.cos(s.slantRad);
       const sinA = Math.sin(s.slantRad);
 
-      // Position = diagonal crest point rotated by slantRad + downward cascade
-      const rx = s.colPos * cosA + progress * sinA * 0.85 + windShift;
-      // Wrap X smoothly inside [-21, +21] so the screen is ALWAYS densely blanketed edge-to-edge
+      const rx = s.colPos * cosA + progress * sinA * 0.82 + windShift;
       const wrappedX = ((((rx + 21) % 42) + 42) % 42) - 21;
-      const ry = alongY + s.colPos * sinA * 0.42;
-      const rz = s.depthZ + Math.sin(progress * 0.25 + s.planeIdx) * 0.45;
+      const ry = alongY + s.colPos * sinA * 0.4;
+      const rz = s.depthZ + Math.sin(progress * 0.22 + s.planeIdx) * 0.35;
 
       this._pos.set(wrappedX, ry, rz);
 
-      // Micro-lens deflection ONLY within 1.35u of camera eyeball -> near-miss thrills with zero clip!
+      // Clean generous eye clearance (2.4u) so fast cards frame the edges dramatically without eye fatigue!
       this._toBullet.subVectors(this._pos, camPos);
       const distSq = this._toBullet.lengthSq();
-      if (distSq < 1.82 && distSq > 1e-5) {
+      if (distSq < 5.76 && distSq > 1e-5) {
         const d = Math.sqrt(distSq);
-        this._pos.addScaledVector(this._toBullet, (1.35 - d) / d);
+        this._pos.addScaledVector(this._toBullet, (2.4 - d) / d);
       }
 
-      // Direction points strictly along the diagonal slashing motion
-      this._dir.set(sinA * 0.88, -cosA, 0.08 * Math.sin(t + s.planeIdx)).normalize();
-      orientForwardWithRoll(this._dir, s.dirSign * 0.35, this._quat);
+      this._dir.set(sinA * 0.88, -cosA, 0.06 * Math.sin(t * 0.6 + s.planeIdx)).normalize();
+      orientForwardWithRoll(this._dir, s.dirSign * 0.32, this._quat);
 
       const edgeFade = smoothstep(0, 2.8, progress) * (1 - smoothstep(rowSpan - 3.2, rowSpan, progress));
       this._scale.setScalar(s.scale * unlocked * edgeFade);
@@ -487,7 +480,7 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
       this.talismanMesh.setMatrixAt(i, this._mat4);
     }
 
-    // 2. Update 1,400 Oppressive Summit-to-Viewer Depth-Rush Ofuda streaming from Shimenawa Halo!
+    // 2. Update 1,400 Synchronized Summit-Fan Storm Ofuda cascading radially from Shimenawa Halo!
     const baseIdx = this.latticeOfudas.length;
     for (let j = 0; j < this.stormOfudas.length; j++) {
       const s = this.stormOfudas[j];
@@ -498,32 +491,32 @@ export class TH10MountainOfFaithSpell implements SpellCardInstance {
         continue;
       }
 
-      const cycle = (flowTime * (1.0 + frenzy * 0.35) + s.cycleOffset) % s.cycleSpan;
+      const cycle = (flowTime * (0.95 + frenzy * 0.32) + s.cycleOffset) % s.cycleSpan;
       const travel = cycle * s.speed;
 
-      // Spiraling radial emission from Kanako's summit Shimenawa straight down & forward toward viewer!
-      const theta = (s.armIdx / s.armCount) * Math.PI * 2 + flowTime * s.spiralRate + cycle * 0.45;
+      // Organized 14-arm spiraling sacred fan sweeping majestically outward & downward from summit
+      const theta = (s.armIdx / s.armCount) * Math.PI * 2 + flowTime * s.spiralRate + cycle * 0.28;
       const coneR = Math.sin(s.spreadAngle) * travel;
       const x = this._summitOrigin.x + Math.cos(theta) * coneR;
-      const y = this._summitOrigin.y - travel * 0.34 + Math.sin(theta) * coneR * 0.65;
-      const z = this._summitOrigin.z + travel * 0.94;
+      const y = this._summitOrigin.y - travel * 0.32 + Math.sin(theta) * coneR * 0.68;
+      const z = this._summitOrigin.z + travel * 0.92;
 
       this._pos.set(x, y, z);
 
-      // Deflect only right at the camera pupil so cards roar dramatically inches past both sides!
+      // Keep 2.8u breathing halo around camera eye so streaming cards frame the screen cleanly!
       this._toBullet.subVectors(this._pos, camPos);
       const distSq = this._toBullet.lengthSq();
-      if (distSq < 2.25 && distSq > 1e-5) {
+      if (distSq < 7.84 && distSq > 1e-5) {
         const d = Math.sqrt(distSq);
-        this._pos.addScaledVector(this._toBullet, (1.5 - d) / d);
+        this._pos.addScaledVector(this._toBullet, (2.8 - d) / d);
       }
 
       this._dir
-        .set(Math.cos(theta) * Math.sin(s.spreadAngle), -0.34 + Math.sin(theta) * Math.sin(s.spreadAngle) * 0.65, 0.94)
+        .set(Math.cos(theta) * Math.sin(s.spreadAngle), -0.32 + Math.sin(theta) * Math.sin(s.spreadAngle) * 0.68, 0.92)
         .normalize();
       orientForwardWithRoll(this._dir, theta, this._quat);
 
-      const lifeFade = smoothstep(0, 0.25, cycle) * (1 - smoothstep(s.cycleSpan - 0.35, s.cycleSpan, cycle));
+      const lifeFade = smoothstep(0, 0.25, cycle) * (1 - smoothstep(s.cycleSpan - 0.38, s.cycleSpan, cycle));
       this._scale.setScalar(s.scale * unlocked * lifeFade);
       this._mat4.compose(this._pos, this._quat, this._scale);
       this.talismanMesh.setMatrixAt(baseIdx + j, this._mat4);

@@ -104,12 +104,16 @@ export class NuclearSun {
   private readonly accretionDisk: THREE.Mesh;
   private readonly hazardRingA: THREE.Mesh;
   private readonly hazardRingB: THREE.Mesh;
+  private readonly shockShell: THREE.Mesh;
+  private readonly blastRing: THREE.Mesh;
   private readonly flareGroup = new THREE.Group();
 
   private readonly photoMat: THREE.ShaderMaterial;
   private readonly coronaMat: THREE.ShaderMaterial;
   private readonly diskMat: THREE.ShaderMaterial;
   private readonly flareMat: THREE.ShaderMaterial;
+  private readonly shockMat: THREE.ShaderMaterial;
+  private readonly blastRingMat: THREE.ShaderMaterial;
 
   private readonly geometries: THREE.BufferGeometry[] = [];
   private readonly materials: THREE.Material[] = [];
@@ -371,40 +375,152 @@ export class NuclearSun {
     this.root.add(this.hazardRingA, this.hazardRingB);
     this.geometries.push(ringAGeom, ringBGeom);
     this.materials.push(ringAMat, ringBMat);
+
+    // 6. 3D Expanding Spherical Supernova Plasma Shockwave Shell (detonates violently at Act 4!)
+    const shockGeom = new THREE.SphereGeometry(1.0, 48, 32);
+    this.shockMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      uniforms: {
+        uOpacity: { value: 0 },
+        uHeat: { value: 1 },
+      },
+      vertexShader: /* glsl */ `
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vNormal = normalize(normalMatrix * normal);
+          vViewDir = normalize(-mvPos.xyz);
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uOpacity;
+        uniform float uHeat;
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          float ndv = clamp(abs(dot(normalize(vNormal), normalize(vViewDir))), 0.0, 1.0);
+          float rim = 1.0 - ndv;
+          float rim2 = rim * rim;
+          float rim4 = rim2 * rim2;
+          vec3 col = mix(vec3(1.15, 0.34, 0.06), vec3(1.85, 1.55, 0.95), rim2 * uHeat);
+          float alpha = (rim2 * 0.32 + rim4 * 0.92) * uOpacity;
+          if (alpha < 0.005) discard;
+          gl_FragColor = vec4(col, alpha);
+        }
+      `,
+    });
+    this.shockShell = new THREE.Mesh(shockGeom, this.shockMat);
+    this.shockShell.visible = false;
+    this.root.add(this.shockShell);
+    this.geometries.push(shockGeom);
+    this.materials.push(this.shockMat);
+
+    // 7. Blazing Equatorial Supernova Blast Wave Torus Ring
+    const blastRingGeom = new THREE.TorusGeometry(1.0, 0.065, 16, 96);
+    this.blastRingMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uOpacity: { value: 0 },
+      },
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uOpacity;
+        varying vec2 vUv;
+        void main() {
+          float band = 0.68 + 0.32 * sin(vUv.x * 50.265);
+          vec3 col = mix(vec3(1.25, 0.48, 0.1), vec3(1.9, 1.65, 1.05), band);
+          gl_FragColor = vec4(col, uOpacity * band);
+        }
+      `,
+    });
+    this.blastRing = new THREE.Mesh(blastRingGeom, this.blastRingMat);
+    this.blastRing.rotation.x = Math.PI * 0.44;
+    this.blastRing.rotation.y = 0.22;
+    this.blastRing.visible = false;
+    this.root.add(this.blastRing);
+    this.geometries.push(blastRingGeom);
+    this.materials.push(this.blastRingMat);
   }
 
-  public update(t: number, ignition: number, climax: number, supernova: number, outroFade: number): void {
-    const sunScale = (0.28 + ignition * 0.72 + climax * 0.14 + supernova * 0.48) * (0.25 + 0.75 * outroFade);
+  public update(
+    t: number,
+    ignition: number,
+    climax: number,
+    implosion: number,
+    supernova: number,
+    blastAge: number,
+    outroFade: number,
+  ): void {
+    // Dramatic gravitational implosion pinch right before violent Supernova rebound!
+    const pinch = 1.0 - implosion * 0.44;
+    const rebound = supernova > 0 ? 1.0 + supernova * 0.62 : 1.0;
+    const sunScale = (0.28 + ignition * 0.72 + climax * 0.14) * pinch * rebound * (0.25 + 0.75 * outroFade);
     this.photosphere.scale.setScalar(sunScale);
-    this.corona.scale.setScalar(sunScale * (1.0 + climax * 0.18 + supernova * 0.36));
-    this.flareGroup.scale.setScalar(sunScale);
+    this.corona.scale.setScalar(sunScale * (1.0 + climax * 0.18 + supernova * 0.52));
+    this.flareGroup.scale.setScalar(sunScale * (1.0 + supernova * 0.35));
 
-    this.photosphere.rotation.y = t * 0.32;
-    this.flareGroup.rotation.y = -t * 0.42;
+    this.photosphere.rotation.y = t * (0.32 + implosion * 1.4);
+    this.flareGroup.rotation.y = -t * (0.42 + implosion * 1.2);
     this.flareGroup.rotation.z = t * 0.18;
 
     this.photoMat.uniforms.uTime.value = t;
-    this.photoMat.uniforms.uIntensity.value = (0.55 + ignition * 0.58 + supernova * 0.45) * outroFade;
+    this.photoMat.uniforms.uIntensity.value =
+      (0.55 + ignition * 0.58 + implosion * 0.85 + supernova * 0.72) * outroFade;
 
     this.coronaMat.uniforms.uTime.value = t;
-    this.coronaMat.uniforms.uIntensity.value = (0.35 + ignition * 0.75 + supernova * 0.55) * outroFade;
+    this.coronaMat.uniforms.uIntensity.value =
+      (0.35 + ignition * 0.75 + implosion * 0.65 + supernova * 0.9) * outroFade;
 
     this.flareMat.uniforms.uTime.value = t;
     this.flareMat.uniforms.uOpacity.value = ignition * outroFade;
 
     this.diskMat.uniforms.uTime.value = t;
     this.diskMat.uniforms.uOpacity.value = (0.18 + ignition * 0.65 + climax * 0.25) * outroFade;
-    this.accretionDisk.scale.setScalar(0.55 + ignition * 0.55 + supernova * 0.32);
+    this.accretionDisk.scale.setScalar((0.55 + ignition * 0.55) * (1.0 - implosion * 0.24) + supernova * 0.65);
 
-    // Hazard rings spin aggressively during warning alarm and accretion peak
-    this.hazardRingA.rotation.z = t * (0.55 + climax * 0.65);
-    this.hazardRingB.rotation.z = -t * (0.72 + climax * 0.8);
+    // Hazard rings spin wildly during implosion, then blow outward on detonation!
+    this.hazardRingA.rotation.z = t * (0.55 + climax * 0.65 + implosion * 2.2);
+    this.hazardRingB.rotation.z = -t * (0.72 + climax * 0.8 + implosion * 2.5);
+    this.hazardRingA.scale.setScalar(1.0 - implosion * 0.18 + supernova * 1.35);
+    this.hazardRingB.scale.setScalar(1.0 - implosion * 0.22 + supernova * 1.55);
 
     const warnBlink = 0.68 + 0.32 * Math.sin(t * 7.8);
     (this.hazardRingA.material as THREE.MeshBasicMaterial).opacity =
-      (0.55 + (1 - ignition) * 0.35 * warnBlink) * outroFade;
+      (0.55 + (1 - ignition) * 0.35 * warnBlink) * (1 - supernova * 0.65) * outroFade;
     (this.hazardRingB.material as THREE.MeshBasicMaterial).opacity =
-      (0.42 + climax * 0.26) * outroFade;
+      (0.42 + climax * 0.26) * (1 - supernova * 0.65) * outroFade;
+
+    // 3D Spherical Supernova Shockwave Shell + Equatorial Plasma Blast Ring
+    if (blastAge > 0.001 && blastAge < 2.6) {
+      const waveProg = Math.min(1, blastAge / 1.9);
+      const easeR = 1.0 - (1.0 - waveProg) * (1.0 - waveProg) * (1.0 - waveProg);
+      const fadeWave = Math.exp(-blastAge * 1.65) * outroFade;
+
+      this.shockShell.visible = true;
+      this.shockShell.scale.setScalar(2.4 + easeR * 34.0);
+      this.shockMat.uniforms.uOpacity.value = fadeWave * 0.95;
+      this.shockMat.uniforms.uHeat.value = Math.max(0.2, 1.0 - waveProg * 0.7);
+
+      this.blastRing.visible = true;
+      this.blastRing.scale.setScalar(2.6 + easeR * 38.0);
+      this.blastRingMat.uniforms.uOpacity.value = fadeWave * 0.92;
+    } else {
+      this.shockShell.visible = false;
+      this.blastRing.visible = false;
+    }
   }
 
   public dispose(): void {
