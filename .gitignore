@@ -1,0 +1,20 @@
+node_modules/
+dist/
+*.local
+
+# Raw & generated audio assets (regenerated locally via `pnpm run audio:build`)
+musicfiles/
+public/audio/raw/*.mp3
+public/audio/raw/*.wav
+public/audio/raw/*.flac
+public/audio/raw/*.ogg
+public/audio/raw/*.m4a
+public/audio/clips/
+public/audio/master_mix.mp3
+public/audio/master_mix.wav
+
+# OS & editor junk
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json

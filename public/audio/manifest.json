@@ -1,0 +1,114 @@
+{
+  "masterMix": "/audio/master_mix.mp3",
+  "masterDurationSec": 185.71,
+  "clips": {
+    "TH06": "/audio/clips/TH06.mp3",
+    "TH07": "/audio/clips/TH07.mp3",
+    "TH08": "/audio/clips/TH08.mp3",
+    "TH09": "/audio/clips/TH09.mp3",
+    "TH10": "/audio/clips/TH10.mp3",
+    "TH11": "/audio/clips/TH11.mp3",
+    "TH12": "/audio/clips/TH12.mp3",
+    "TH13": "/audio/clips/TH13.mp3",
+    "TH14": "/audio/clips/TH14.mp3",
+    "TH15": "/audio/clips/TH15.mp3",
+    "TH16": "/audio/clips/TH16.mp3",
+    "TH17": "/audio/clips/TH17.mp3",
+    "TH18": "/audio/clips/TH18.mp3",
+    "TH19": "/audio/clips/TH19.mp3",
+    "TH20": "/audio/clips/TH20.mp3"
+  },
+  "details": {
+    "TH06": {
+      "source": "上海爱莉丝幻乐团 - 月時計　～ ルナ・ダイアル (月亮的钟表盒).mp3",
+      "startSec": 2.45,
+      "durationSec": 15,
+      "masterStartSec": 0
+    },
+    "TH07": {
+      "source": "上海爱莉丝幻乐团 - ボーダーオブライフ (生死之境‎)_H.mp3",
+      "startSec": 18.8,
+      "durationSec": 14,
+      "masterStartSec": 14.15
+    },
+    "TH08": {
+      "source": "上海爱莉丝幻乐团 - 千年幻想郷　～ History of the Moon.mp3",
+      "startSec": 32,
+      "durationSec": 12.5,
+      "masterStartSec": 27.3
+    },
+    "TH09": {
+      "source": "上海爱莉丝幻乐团 - 今昔幻想郷　～ Flower Land.mp3",
+      "startSec": 75.5,
+      "durationSec": 12,
+      "masterStartSec": 38.95
+    },
+    "TH10": {
+      "source": "上海爱莉丝幻乐团 - 神さびた古戦場　～ Suwa Foughten Field.mp3",
+      "startSec": 28,
+      "durationSec": 13,
+      "masterStartSec": 50.1
+    },
+    "TH11": {
+      "source": "黄昏フロンティア - 霊知の太陽信仰 ～ Nuclear Fusion _ あきやまうに.mp3",
+      "startSec": 0.95,
+      "durationSec": 14,
+      "masterStartSec": 62.25
+    },
+    "TH12": {
+      "source": "上海爱莉丝幻乐团 - 感情の摩天楼　～ Cosmic Mind.mp3",
+      "startSec": 74,
+      "durationSec": 12.5,
+      "masterStartSec": 75.4
+    },
+    "TH13": {
+      "source": "上海爱莉丝幻乐团 - 聖徳伝説　～　True Administrator.mp3",
+      "startSec": 11,
+      "durationSec": 12.5,
+      "masterStartSec": 87.05
+    },
+    "TH14": {
+      "source": "上海爱莉丝幻乐团 - リバースイデオロギー (反意识形态).mp3",
+      "startSec": 63.5,
+      "durationSec": 12.5,
+      "masterStartSec": 98.7
+    },
+    "TH15": {
+      "source": "上海爱莉丝幻乐团 - ピュアヒューリーズ　～ 心の在処.mp3",
+      "startSec": 62.5,
+      "durationSec": 13.5,
+      "masterStartSec": 110.35
+    },
+    "TH16": {
+      "source": "上海爱莉丝幻乐团 - 秘匿されたフォーシーズンズ.mp3",
+      "startSec": 10.5,
+      "durationSec": 12.5,
+      "masterStartSec": 123
+    },
+    "TH17": {
+      "source": "上海爱莉丝幻乐团 - 偶像に世界を委ねて ～ Idoratrize World.mp3",
+      "startSec": 20,
+      "durationSec": 12.5,
+      "masterStartSec": 134.65
+    },
+    "TH18": {
+      "source": "上海爱莉丝幻乐团 - あの賑やかな市場は今どこに　～ Immemorial Marketeers.mp3",
+      "startSec": 74.5,
+      "durationSec": 12.5,
+      "masterStartSec": 146.3
+    },
+    "TH19": {
+      "source": "上海爱莉丝幻乐团 - 逸脱者達の無礙光 ～ Kingdom of Nothingness_.mp3",
+      "startSec": 43,
+      "durationSec": 12.5,
+      "masterStartSec": 157.95
+    },
+    "TH20": {
+      "source": "上海爱莉丝幻乐团 - 最後の一人は慣れてるから　〜 Stone Goddess_L.mp3",
+      "startSec": 43.5,
+      "durationSec": 14.5,
+      "masterStartSec": 169.6
+    }
+  },
+  "missing": []
+}

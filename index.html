@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>东方正作 3D 符卡演出 | TH06-TH20</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="stage-canvas"></canvas>
+
+      <!-- Minimal Cinema Spell Title (matches pure 3D showcase aesthetic) -->
+      <div id="cinema-caption" class="cinema-caption">
+        <div class="caption-meta" id="caption-meta">TH06 · 东方红魔乡</div>
+        <div class="caption-title" id="caption-title">幻世 "The World"</div>
+      </div>
+
+      <!-- Toggleable Director & Export HUD (Press H to hide completely) -->
+      <div id="director-hud" class="director-hud">
+        <div class="hud-top">
+          <div class="hud-brand">
+            <span class="brand-dot"></span>
+            <span class="brand-name">3D DANMAKU STAGE</span>
+            <select id="spell-select" class="hud-select" title="选择符卡"></select>
+            <button id="btn-medley" class="hud-btn" title="开启后自动按顺序连播全部已做好的符卡与同步原曲 (A)">
+              连播: 关
+            </button>
+          </div>
+          <div class="hud-top-right">
+            <span id="phase-badge" class="phase-badge">PRELUDE</span>
+            <span id="stats-badge" class="stats-badge">60 FPS | 0 INST</span>
+            <button id="btn-camera-mode" class="hud-btn active" title="切换运镜/自由视角 (C)">
+              运镜: 自动
+            </button>
+            <button id="btn-caption-toggle" class="hud-btn active" title="显示/隐藏底部符卡标题 (T)">
+              标题: 开
+            </button>
+            <button id="btn-audio-panel" class="hud-btn" title="BGM 对轨与原曲截取试听 (B)">
+              BGM 对轨
+            </button>
+            <button id="btn-export-panel" class="hud-btn" title="视频录制与逐帧导出 (E)">
+              导出
+            </button>
+            <button id="btn-hide-hud" class="hud-btn" title="隐藏控制栏进入纯净观赏模式 (H)">
+              纯净模式 (H)
+            </button>
+          </div>
+        </div>
+
+        <!-- BGM Sync & Audition Drawer -->
+        <div id="audio-drawer" class="export-drawer hidden">
+          <div class="drawer-header">
+            <span>BGM 原曲对轨与截取试听</span>
+            <button id="btn-close-audio" class="icon-btn">x</button>
+          </div>
+          <div id="audio-canon-hint" class="audio-canon-hint">对应原曲: -</div>
+          <div class="drawer-actions">
+            <label class="hud-btn primary" for="audio-file-input">
+              载入本地原曲 (.mp3/.flac/.wav)
+            </label>
+            <input
+              id="audio-file-input"
+              type="file"
+              accept="audio/*"
+              class="hidden"
+            />
+            <button id="btn-audio-mute" class="hud-btn" title="静音/取消静音 (M)">静音: 关</button>
+            <button id="btn-copy-cue" class="hud-btn" title="复制当前截取秒数用于 FFmpeg 批处理">
+              复制截取秒数
+            </button>
+          </div>
+          <div class="drawer-grid">
+            <label class="drawer-field">
+              <span>原曲截取起点: <strong id="audio-offset-val">0.0s</strong></span>
+              <input id="audio-offset-slider" type="range" min="0" max="240" step="0.1" value="0" />
+            </label>
+            <label class="drawer-field">
+              <span>音量: <strong id="audio-vol-val">78%</strong></span>
+              <input id="audio-vol-slider" type="range" min="0" max="1" step="0.01" value="0.78" />
+            </label>
+          </div>
+          <div id="audio-status" class="export-status">
+            未载入 BGM. 提示: 直接拖拽音频文件到页面, 或把 15 首原曲放到 public/audio/raw/ 后运行 pnpm run audio:build.
+          </div>
+        </div>
+
+        <!-- Export Drawer -->
+        <div id="export-drawer" class="export-drawer hidden">
+          <div class="drawer-header">
+            <span>视频出片与逐帧导出</span>
+            <button id="btn-close-export" class="icon-btn">x</button>
+          </div>
+          <div class="drawer-grid">
+            <label class="drawer-field">
+              <span>分辨率</span>
+              <select id="export-res" class="hud-select">
+                <option value="viewport">当前窗口</option>
+                <option value="1920x1080" selected>1920 x 1080 (1080p)</option>
+                <option value="2560x1440">2560 x 1440 (2K)</option>
+                <option value="3840x2160">3840 x 2160 (4K)</option>
+              </select>
+            </label>
+            <label class="drawer-field">
+              <span>帧率 (FPS)</span>
+              <select id="export-fps" class="hud-select">
+                <option value="30">30 fps</option>
+                <option value="60" selected>60 fps</option>
+              </select>
+            </label>
+            <label class="drawer-field checkbox-field">
+              <input type="checkbox" id="export-include-caption" checked />
+              <span>导出时保留底部符卡标题</span>
+            </label>
+          </div>
+          <div class="drawer-actions">
+            <button id="btn-record-webm" class="hud-btn primary">
+              录制完整 WebM (从 0s 到结尾)
+            </button>
+            <button id="btn-export-png" class="hud-btn">
+              确定性逐帧导出 PNG 序列 (无掉帧)
+            </button>
+            <button id="btn-cancel-export" class="hud-btn danger hidden">
+              中止导出
+            </button>
+          </div>
+          <div id="export-status" class="export-status">
+            就绪. 提示: PNG 序列会以严格固定步长渲染每一帧, 可用 FFmpeg/PR/AE 合成无掉帧 60fps 成片.
+          </div>
+        </div>
+
+        <div class="hud-bottom">
+          <div class="transport-row">
+            <button id="btn-play" class="hud-btn primary" title="播放/暂停 (Space)">暂停</button>
+            <button id="btn-restart" class="hud-btn" title="从头播放 (R)">重播</button>
+            <select id="speed-select" class="hud-select" title="播放倍率">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1.0x</option>
+              <option value="1.5">1.5x</option>
+            </select>
+            <div class="timeline-wrap">
+              <input
+                id="timeline-slider"
+                type="range"
+                min="0"
+                max="22"
+                step="0.01"
+                value="0"
+              />
+              <div id="phase-markers" class="phase-markers"></div>
+            </div>
+            <span id="time-readout" class="time-readout">00.00 / 22.00s</span>
+          </div>
+          <div class="phase-row" id="phase-buttons"></div>
+        </div>
+      </div>
+
+      <!-- Floating tiny hint when HUD is hidden -->
+      <div id="hud-restore-hint" class="hud-restore-hint hidden">
+        按 H 恢复控制栏 · Space 暂停 · C 自由视角
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

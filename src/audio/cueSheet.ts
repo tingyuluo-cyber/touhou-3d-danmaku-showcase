@@ -1,0 +1,167 @@
+export interface SpellAudioCueConfig {
+  gameCode: string;
+  spellId: string;
+  rawStartSec: number;
+  durationSec: number;
+  bpm: number;
+  fadeInSec: number;
+  fadeOutSec: number;
+  clipUrl: string;
+}
+
+/**
+ * Harmonized TH06-TH20 cue sheet:
+ * Every card sits cleanly in the 12.0s - 15.0s band (~3m 10s stitched organic master).
+ */
+export const SPELL_AUDIO_CUES: Record<string, SpellAudioCueConfig> = {
+  'th06-the-world': {
+    gameCode: 'TH06',
+    spellId: 'th06-the-world',
+    rawStartSec: 2.45,
+    durationSec: 15.0,
+    bpm: 152,
+    fadeInSec: 0.75,
+    fadeOutSec: 1.65,
+    clipUrl: '/audio/clips/TH06.mp3',
+  },
+  'th07-saigyouji-parinirvana': {
+    gameCode: 'TH07',
+    spellId: 'th07-saigyouji-parinirvana',
+    rawStartSec: 18.8,
+    durationSec: 14.0,
+    bpm: 160,
+    fadeInSec: 0.85,
+    fadeOutSec: 1.65,
+    clipUrl: '/audio/clips/TH07.mp3',
+  },
+  'th08-astronomical-entombing': {
+    gameCode: 'TH08',
+    spellId: 'th08-astronomical-entombing',
+    rawStartSec: 32.0,
+    durationSec: 12.5,
+    bpm: 156,
+    fadeInSec: 0.85,
+    fadeOutSec: 1.6,
+    clipUrl: '/audio/clips/TH08.mp3',
+  },
+  'th09-flowering-gensokyo': {
+    gameCode: 'TH09',
+    spellId: 'th09-flowering-gensokyo',
+    rawStartSec: 75.5,
+    durationSec: 12.0,
+    bpm: 144,
+    fadeInSec: 0.85,
+    fadeOutSec: 1.6,
+    clipUrl: '/audio/clips/TH09.mp3',
+  },
+  'th10-mountain-of-faith': {
+    gameCode: 'TH10',
+    spellId: 'th10-mountain-of-faith',
+    rawStartSec: 28.0,
+    durationSec: 13.0,
+    bpm: 162,
+    fadeInSec: 0.8,
+    fadeOutSec: 1.65,
+    clipUrl: '/audio/clips/TH10.mp3',
+  },
+  'th11-subterranean-sun': {
+    gameCode: 'TH11',
+    spellId: 'th11-subterranean-sun',
+    rawStartSec: 0.95,
+    durationSec: 14.0,
+    bpm: 170,
+    fadeInSec: 0.7,
+    fadeOutSec: 1.7,
+    clipUrl: '/audio/clips/TH11.mp3',
+  },
+  'th12-devils-recitation': {
+    gameCode: 'TH12',
+    spellId: 'th12-devils-recitation',
+    rawStartSec: 74.0,
+    durationSec: 12.5,
+    bpm: 166,
+    fadeInSec: 0.85,
+    fadeOutSec: 1.6,
+    clipUrl: '/audio/clips/TH12.mp3',
+  },
+  'th13-seventeen-lasers': {
+    gameCode: 'TH13',
+    spellId: 'th13-seventeen-lasers',
+    rawStartSec: 11.0,
+    durationSec: 12.5,
+    bpm: 164,
+    fadeInSec: 0.8,
+    fadeOutSec: 1.65,
+    clipUrl: '/audio/clips/TH13.mp3',
+  },
+  'th14-this-side-down': {
+    gameCode: 'TH14',
+    spellId: 'th14-this-side-down',
+    rawStartSec: 63.5,
+    durationSec: 12.5,
+    bpm: 160,
+    fadeInSec: 0.7,
+    fadeOutSec: 1.6,
+    clipUrl: '/audio/clips/TH14.mp3',
+  },
+  'th15-pristine-danmaku-hell': {
+    gameCode: 'TH15',
+    spellId: 'th15-pristine-danmaku-hell',
+    rawStartSec: 62.5,
+    durationSec: 13.5,
+    bpm: 174,
+    fadeInSec: 0.7,
+    fadeOutSec: 1.65,
+    clipUrl: '/audio/clips/TH15.mp3',
+  },
+  'th16-hidden-god': {
+    gameCode: 'TH16',
+    spellId: 'th16-hidden-god',
+    rawStartSec: 10.5,
+    durationSec: 12.5,
+    bpm: 165,
+    fadeInSec: 0.8,
+    fadeOutSec: 1.6,
+    clipUrl: '/audio/clips/TH16.mp3',
+  },
+  'th17-geometric-creature': {
+    gameCode: 'TH17',
+    spellId: 'th17-geometric-creature',
+    rawStartSec: 20.0,
+    durationSec: 12.5,
+    bpm: 168,
+    fadeInSec: 0.75,
+    fadeOutSec: 1.6,
+    clipUrl: '/audio/clips/TH17.mp3',
+  },
+  'th18-rainbow-ring': {
+    gameCode: 'TH18',
+    spellId: 'th18-rainbow-ring',
+    rawStartSec: 74.5,
+    durationSec: 12.5,
+    bpm: 158,
+    fadeInSec: 0.85,
+    fadeOutSec: 1.65,
+    clipUrl: '/audio/clips/TH18.mp3',
+  },
+  'th19-kingdom-of-nothingness': {
+    gameCode: 'TH19',
+    spellId: 'th19-kingdom-of-nothingness',
+    rawStartSec: 43.0,
+    durationSec: 12.5,
+    bpm: 150,
+    fadeInSec: 0.85,
+    fadeOutSec: 1.75,
+    clipUrl: '/audio/clips/TH19.mp3',
+  },
+  'th20-danmaku-fossil': {
+    gameCode: 'TH20',
+    spellId: 'th20-danmaku-fossil',
+    rawStartSec: 43.5,
+    durationSec: 14.5,
+    bpm: 148,
+    fadeInSec: 0.95,
+    fadeOutSec: 2.4,
+    clipUrl: '/audio/clips/TH20.mp3',
+  },
+};
