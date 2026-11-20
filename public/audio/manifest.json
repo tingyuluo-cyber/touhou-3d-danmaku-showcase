@@ -1,6 +1,6 @@
 {
   "masterMix": "/audio/master_mix.mp3",
-  "masterDurationSec": 185.71,
+  "masterDurationSec": 184.13,
   "clips": {
     "TH06": "/audio/clips/TH06.mp3",
     "TH07": "/audio/clips/TH07.mp3",
@@ -27,7 +27,7 @@
     },
     "TH07": {
       "source": "上海爱莉丝幻乐团 - ボーダーオブライフ (生死之境‎)_H.mp3",
-      "startSec": 18.8,
+      "startSec": 20.85,
       "durationSec": 14,
       "masterStartSec": 14.15
     },

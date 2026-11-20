@@ -177,8 +177,8 @@ const CinemaFXShader = {
         col += vec3(1.1, 0.16, 0.36) * seamGlow * 1.1;
       }
 
-      // Cinematic vignette
-      float vig = smoothstep(0.42, 1.38, dist);
+      // Aspect-balanced cinematic vignette (equally refined on 16:9 landscape & 9:16 portrait!)
+      float vig = smoothstep(0.68, 1.62, length(centered * 2.0));
       col *= 1.0 - vig * uVignette;
 
       // Ultra-subtle film grain (prevents dark banding in video compression)

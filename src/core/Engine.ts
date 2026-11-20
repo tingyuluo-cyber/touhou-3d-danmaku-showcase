@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createMetallicStudioEnv } from './StudioEnv';
 import { PostProcessingPipeline } from './PostProcessing';
-import { CameraDirector, type CameraMode } from './CameraDirector';
+import { CameraDirector, type AspectMode, type CameraMode } from './CameraDirector';
 import { Timeline } from './Timeline';
 import { AudioSyncController, type AudioStatusInfo } from './AudioSync';
 import { smootherstep } from '../prototypes/DanmakuMath';
@@ -35,6 +35,7 @@ export class DanmakuEngine implements RecorderHost {
   private fpsFrames = 0;
   private currentFps = 60;
   private isExportSizing = false;
+  private aspectMode: AspectMode = 'landscape';
 
   private readonly cameraPose: CameraPose = {
     position: new THREE.Vector3(0, 2, 22),
@@ -186,6 +187,25 @@ export class DanmakuEngine implements RecorderHost {
     return this.cameraDirector.mode;
   }
 
+  public getAspectMode(): AspectMode {
+    return this.aspectMode;
+  }
+
+  public setAspectMode(mode: AspectMode): void {
+    if (this.aspectMode === mode) return;
+    this.aspectMode = mode;
+    this.handleResize();
+    if (this.currentSpell && !this.timeline.playing) {
+      this.evaluateAndRender(this.timeline.time, 1 / 60);
+    }
+  }
+
+  public toggleAspectMode(): AspectMode {
+    const next: AspectMode = this.aspectMode === 'landscape' ? 'portrait' : 'landscape';
+    this.setAspectMode(next);
+    return next;
+  }
+
   public toggleCameraMode(): CameraMode {
     const order: CameraMode[] = ['cinema', 'locked', 'free'];
     const idx = order.indexOf(this.cameraDirector.mode);
@@ -300,12 +320,20 @@ export class DanmakuEngine implements RecorderHost {
 
   private readonly handleResize = (): void => {
     if (this.isExportSizing) return;
-    const width = window.innerWidth;
     const height = Math.max(1, window.innerHeight);
+    const width =
+      this.aspectMode === 'portrait'
+        ? Math.max(1, Math.min(window.innerWidth, Math.round(height * (9 / 16))))
+        : Math.max(1, window.innerWidth);
     const pr = Math.min(window.devicePixelRatio, 2);
+    const aspect = width / height;
 
-    this.camera.aspect = width / height;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+    this.cameraDirector.setAspectRatio(aspect);
+    if (this.cameraDirector.mode === 'locked' && this.currentSpell) {
+      this.cameraDirector.applyLockedPreset(this.currentSpell.metadata.gameCode);
+    }
     this.renderer.setPixelRatio(pr);
     this.renderer.setSize(width, height, false);
     this.post.setSize(width, height, pr);
@@ -333,8 +361,13 @@ export class DanmakuEngine implements RecorderHost {
 
   public enterExportSize(width: number, height: number): void {
     this.isExportSizing = true;
-    this.camera.aspect = width / Math.max(1, height);
+    const aspect = width / Math.max(1, height);
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+    this.cameraDirector.setAspectRatio(aspect);
+    if (this.cameraDirector.mode === 'locked' && this.currentSpell) {
+      this.cameraDirector.applyLockedPreset(this.currentSpell.metadata.gameCode);
+    }
     this.renderer.setPixelRatio(1);
     this.renderer.setSize(width, height, false);
     this.post.setSize(width, height, 1);

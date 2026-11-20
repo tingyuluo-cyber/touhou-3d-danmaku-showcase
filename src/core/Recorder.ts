@@ -1,7 +1,14 @@
 import { getCaptionTheme } from '../ui/captionThemes';
 
 export interface ExportConfig {
-  resolution: 'viewport' | '1920x1080' | '2560x1440' | '3840x2160';
+  resolution:
+    | 'viewport'
+    | '1920x1080'
+    | '2560x1440'
+    | '3840x2160'
+    | '1080x1920'
+    | '1440x2560'
+    | '2160x3840';
   fps: number;
   includeCaption: boolean;
 }
@@ -42,9 +49,14 @@ function drawCaptionOverlay(
 ): void {
   if (alpha <= 0.005) return;
   const theme = getCaptionTheme(caption.gameCode);
-  const scale = height / 1080;
+  const isPortrait = height > width;
+  // Use min(width, height) so 1080x1920 vertical exports scale identically to 1920x1080!
+  const scale = (Math.min(width, height) / 1080) * (isPortrait ? 0.94 : 1.0);
   const cx = width / 2;
-  const bottomBase = height - Math.round(40 * scale);
+  // Lift vertical caption into short-video platform safe zone (above Douyin/Shorts/Bilibili bottom UI!)
+  const bottomBase = isPortrait
+    ? height - Math.round(height * 0.115)
+    : height - Math.round(40 * scale);
   const isTimeStop = caption.gameCode === 'TH06' && time >= 2.4 && time <= 10.2;
   const isInverted = caption.gameCode === 'TH14' && time >= 3.2 && time <= 9.2;
   const isPetrified = caption.gameCode === 'TH20' && time >= 3.8;
@@ -286,8 +298,9 @@ export class StageRecorder {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
+        const aspectTag = height > width ? '_9x16' : '';
         const modeTag = host.getCameraMode() === 'cinema' ? '' : `_${host.getCameraMode()}`;
-        a.download = `${caption.gameCode}_${width}x${height}_${config.fps}fps${modeTag}.webm`;
+        a.download = `${caption.gameCode}_${width}x${height}_${config.fps}fps${aspectTag}${modeTag}.webm`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
         onProgress(`WebM 导出完成! (${(blob.size / (1024 * 1024)).toFixed(1)} MB)`);

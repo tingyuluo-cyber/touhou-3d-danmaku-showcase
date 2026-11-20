@@ -27,7 +27,7 @@ export const SPELL_AUDIO_CUES: Record<string, SpellAudioCueConfig> = {
   'th07-saigyouji-parinirvana': {
     gameCode: 'TH07',
     spellId: 'th07-saigyouji-parinirvana',
-    rawStartSec: 18.8,
+    rawStartSec: 20.85,
     durationSec: 14.0,
     bpm: 160,
     fadeInSec: 0.85,

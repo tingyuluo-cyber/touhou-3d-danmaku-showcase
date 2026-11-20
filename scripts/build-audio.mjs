@@ -247,14 +247,14 @@ function buildTrackClips(code, inputPath, cfg, webOutPath, stemOutPath) {
     { stdio: 'pipe' },
   );
 
-  // 2. Organic master stem: dry track + lush high-passed reverb wash blooming gently over the final 2.0s + 1.4s tail!
-  const tailStart = Math.max(0, actualDur - 2.1);
+  // 2. Clean hi-fi master stem: pure S-curve fades (zero comb-filter aecho stutter!)
+  // Blended organically across the 0.85s overlap by our stereo cinema breath/chime bridges.
   const stemFilter = [
-    `[0:a]loudnorm=I=-14:TP=-1.5:LRA=9,asplit=2[dry_in][wet_in]`,
-    `[dry_in]afade=t=in:st=0:d=${cfg.fadeIn.toFixed(2)}:curve=qsin,afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${cfg.fadeOut.toFixed(2)}:curve=hsin,apad=pad_dur=1.4[dry]`,
-    `[wet_in]atrim=start=${tailStart.toFixed(3)},asetpts=PTS-STARTPTS,highpass=f=320,lowpass=f=5200,aecho=0.8:0.88:55|110|180:0.42|0.34|0.24,afade=t=in:st=0:d=0.6:curve=qsin,apad=pad_dur=1.4,afade=t=out:st=1.4:d=2.0:curve=exp,volume=0.45,adelay=${Math.round(tailStart * 1000)}|${Math.round(tailStart * 1000)}[wet]`,
-    `[dry][wet]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.95[out]`,
-  ].join(';');
+    `loudnorm=I=-14:TP=-1.5:LRA=9`,
+    `afade=t=in:st=0:d=${cfg.fadeIn.toFixed(2)}:curve=qsin`,
+    `afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${cfg.fadeOut.toFixed(2)}:curve=hsin`,
+    `alimiter=limit=0.95`,
+  ].join(',');
 
   execFileSync(
     FFMPEG_BIN,
@@ -264,8 +264,7 @@ function buildTrackClips(code, inputPath, cfg, webOutPath, stemOutPath) {
       '-t', actualDur.toFixed(3),
       '-i', inputPath,
       '-vn',
-      '-filter_complex', stemFilter,
-      '-map', '[out]',
+      '-af', stemFilter,
       '-ar', '48000', '-ac', '2',
       stemOutPath,
     ],

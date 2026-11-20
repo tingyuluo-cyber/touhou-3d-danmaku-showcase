@@ -41,6 +41,9 @@
           <div class="hud-top-right">
             <span id="phase-badge" class="phase-badge">PRELUDE</span>
             <span id="stats-badge" class="stats-badge">60 FPS | 0 INST</span>
+            <button id="btn-aspect-mode" class="hud-btn" title="切换横屏 16:9 / 竖屏 9:16 短视频构图 (P)">
+              画幅: 横屏
+            </button>
             <button id="btn-camera-mode" class="hud-btn active" title="切换 自动动态 / 固定机位(连播生效) / 自由锁坐标 (C)">
               运镜: 自动动态
             </button>
@@ -107,9 +110,12 @@
               <span>分辨率</span>
               <select id="export-res" class="hud-select">
                 <option value="viewport">当前窗口</option>
-                <option value="1920x1080" selected>1920 x 1080 (1080p)</option>
-                <option value="2560x1440">2560 x 1440 (2K)</option>
-                <option value="3840x2160">3840 x 2160 (4K)</option>
+                <option value="1920x1080" selected>1920 x 1080 (横屏 1080p)</option>
+                <option value="2560x1440">2560 x 1440 (横屏 2K)</option>
+                <option value="3840x2160">3840 x 2160 (横屏 4K)</option>
+                <option value="1080x1920">1080 x 1920 (竖屏 9:16 1080p)</option>
+                <option value="1440x2560">1440 x 2560 (竖屏 9:16 2K)</option>
+                <option value="2160x3840">2160 x 3840 (竖屏 9:16 4K)</option>
               </select>
             </label>
             <label class="drawer-field">
@@ -169,7 +175,7 @@
 
       <!-- Floating tiny hint when HUD is hidden -->
       <div id="hud-restore-hint" class="hud-restore-hint hidden">
-        按 H 恢复控制栏 · Space 暂停 · A 连播 · C 切换动态/固定机位
+        按 H 恢复控制栏 · Space 暂停 · A 连播 · C 机位 · P 横/竖屏
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

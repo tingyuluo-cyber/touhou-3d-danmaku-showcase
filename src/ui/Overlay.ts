@@ -10,6 +10,7 @@ export class DirectorOverlay {
   private readonly engine: DanmakuEngine;
   private readonly recorder = new StageRecorder();
 
+  private readonly appEl = document.getElementById('app')!;
   private readonly hudEl = document.getElementById('director-hud')!;
   private readonly captionEl = document.getElementById('cinema-caption')!;
   private readonly captionOrnLeftEl = document.getElementById('caption-orn-left')!;
@@ -26,6 +27,7 @@ export class DirectorOverlay {
   private readonly btnMedley = document.getElementById('btn-medley') as HTMLButtonElement;
   private readonly phaseBadge = document.getElementById('phase-badge')!;
   private readonly statsBadge = document.getElementById('stats-badge')!;
+  private readonly btnAspectMode = document.getElementById('btn-aspect-mode') as HTMLButtonElement;
   private readonly btnCameraMode = document.getElementById('btn-camera-mode') as HTMLButtonElement;
   private readonly btnCaptionToggle = document.getElementById('btn-caption-toggle') as HTMLButtonElement;
   private readonly btnAudioPanel = document.getElementById('btn-audio-panel') as HTMLButtonElement;
@@ -219,6 +221,7 @@ export class DirectorOverlay {
       this.engine.seekTime(val);
     });
 
+    this.btnAspectMode.addEventListener('click', () => this.toggleAspectMode());
     this.btnCameraMode.addEventListener('click', () => this.toggleCameraMode());
     this.btnCaptionToggle.addEventListener('click', () => this.toggleCaption());
     this.btnHideHud.addEventListener('click', () => this.toggleHud());
@@ -322,6 +325,8 @@ export class DirectorOverlay {
         this.toggleHud();
       } else if (e.key === 'c' || e.key === 'C') {
         this.toggleCameraMode();
+      } else if (e.key === 'p' || e.key === 'P') {
+        this.toggleAspectMode();
       } else if (e.key === 't' || e.key === 'T') {
         this.toggleCaption();
       } else if (e.key === 'r' || e.key === 'R') {
@@ -377,6 +382,20 @@ export class DirectorOverlay {
     this.btnPlay.textContent = '暂停';
   }
 
+  private toggleAspectMode(): void {
+    const mode = this.engine.toggleAspectMode();
+    const isPortrait = mode === 'portrait';
+    this.appEl.classList.toggle('portrait-mode', isPortrait);
+    this.btnAspectMode.textContent = isPortrait ? '画幅: 竖屏 9:16' : '画幅: 横屏';
+    this.btnAspectMode.classList.toggle('active', isPortrait);
+    // Smartly switch default export resolution between 1920x1080 and 1080x1920
+    if (isPortrait && this.exportRes.value === '1920x1080') {
+      this.exportRes.value = '1080x1920';
+    } else if (!isPortrait && this.exportRes.value === '1080x1920') {
+      this.exportRes.value = '1920x1080';
+    }
+  }
+
   private toggleCameraMode(): void {
     const mode = this.engine.toggleCameraMode();
     if (mode === 'cinema') {
@@ -415,6 +434,7 @@ export class DirectorOverlay {
   }
 
   private syncLayoutState(): void {
+    this.appEl.classList.toggle('pure-cinema', !this.hudVisible);
     this.hudEl.classList.toggle('hidden', !this.hudVisible);
     this.captionEl.classList.toggle('hidden', !this.captionVisible);
     this.captionEl.classList.toggle('hud-open', this.hudVisible);

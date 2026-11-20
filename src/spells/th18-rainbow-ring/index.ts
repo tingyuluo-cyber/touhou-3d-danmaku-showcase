@@ -107,8 +107,8 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
     this.root = new THREE.Group();
     scene.add(this.root);
 
-    // 1. Subtle Dreamy Brocken-Spectre Rainbow-Bokeh Atmospheric Backdrop (inspired by TH18 stage bg!)
-    const bokehGeom = new THREE.PlaneGeometry(76, 56);
+    // 1. Subtle Dreamy Brocken-Spectre Rainbow-Bokeh Atmospheric Backdrop (fills both 16:9 & tall 9:16 seamlessly!)
+    const bokehGeom = new THREE.PlaneGeometry(118, 118);
     this.bokehMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -152,8 +152,8 @@ export class TH18RainbowRingSpell implements SpellCardInstance {
           vec3 spectrum = 0.55 + 0.45 * cos(6.28318 * (r * 2.2 - uTime * 0.18 + vec3(0.0, 0.33, 0.67)));
           col += spectrum * gloryRing * (0.28 + uReverseGlow * 0.35);
 
-          float vig = 1.0 - smoothstep(0.45, 0.88, r);
-          gl_FragColor = vec4(col * vig, uOpacity * vig);
+          float edgeFade = 1.0 - smoothstep(0.28, 0.48, length(vUv - 0.5));
+          gl_FragColor = vec4(col * edgeFade, uOpacity * edgeFade);
         }
       `,
     });

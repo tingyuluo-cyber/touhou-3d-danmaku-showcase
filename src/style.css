@@ -38,6 +38,66 @@ body,
 }
 
 /* ============================================================================
+   9:16 Vertical Portrait Stage Mode (Douyin / Bilibili Vertical / Shorts)
+   ============================================================================ */
+#app.portrait-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+}
+
+#app.portrait-mode #stage-canvas {
+  width: min(100vw, calc(100vh * 9 / 16));
+  height: 100vh;
+  box-shadow: 0 0 0 1px rgba(132, 198, 255, 0.2), 0 0 42px rgba(0, 0, 0, 0.9);
+}
+
+#app.portrait-mode.pure-cinema #stage-canvas {
+  box-shadow: none;
+}
+
+#app.portrait-mode .cinema-caption {
+  bottom: 11vh;
+  min-width: 0;
+  padding: 6px 14px 4px;
+  max-width: min(calc(100vh * 9 / 16 - 24px), 92vw);
+}
+
+#app.portrait-mode .cinema-caption.hud-open {
+  bottom: 114px;
+}
+
+#app.portrait-mode .caption-meta {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+#app.portrait-mode .caption-ornament {
+  font-size: 9px;
+}
+
+#app.portrait-mode .caption-rule {
+  width: min(230px, calc(100vh * 9 / 16 - 64px));
+  gap: 8px;
+  margin: 3px 0 4px;
+}
+
+#app.portrait-mode .caption-title {
+  font-size: clamp(17px, 2.55vh, 27px) !important;
+  letter-spacing: 0.12em;
+}
+
+#app.portrait-mode .caption-sub {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+}
+
+#app.portrait-mode .cinema-caption[data-game='TH14'] .caption-sub {
+  margin-top: 18px;
+}
+
+/* ============================================================================
    Per-Game Themed Pure Cinema Spell Title (TH06 - TH20)
    ============================================================================ */
 .cinema-caption {
